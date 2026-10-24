@@ -39,6 +39,7 @@ struct {
 } game;
 
 sprite Hero;
+const int ZOOM = 6; 
 
 void InitWindow() {
 
@@ -55,15 +56,18 @@ void InitGame() {
     srand(time(nullptr));
 
     window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
-    Hero.widht = 300;
+    Hero.widht = 40;
     Hero.height = 40;
     Hero.x = 1024 / 2.0f - Hero.widht / 2.0f;  // center map
     Hero.y = 1024 / 2.0f - Hero.height / 2.0f;
     Hero.speed = 40.0f;
 
 }
+
+int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
+int ScreenY(float worldY) { return (int)((worldY - camera.y) * ZOOM); }
 
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
@@ -87,33 +91,55 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
 }
 
+void UpdateCamera() {
+
+    camera.targetX = Hero.x + Hero.widht / 2.0f - window.width / 2.0f;
+    camera.targetY = Hero.y + Hero.height / 2.0f - window.height / 2.0f;
+    
+    camera.x += (camera.targetX - camera.x) * camera.smooth;
+    camera.y += (camera.targetY - camera.y) * camera.smooth;
+
+    const float MAP_H = 1024, MAP_W = 1024;
+    const float viewW = window.width / ZOOM;
+    const float viewH = window.height / ZOOM;
+
+
+
+    //if (camera.x < 0) camera.x = 0;
+    //if (camera.y < 0) camera.y = 0;
+    if (camera.x > MAP_W - viewW) camera.x = MAP_W - viewW;
+    if (camera.y > MAP_H - viewH) camera.y = MAP_H - viewH;
+
+
+
+}
+
 void ShowMap() {
 
     HDC mapDC = CreateCompatibleDC(window.mem_dc);
     HBITMAP hOld = (HBITMAP)SelectObject(mapDC, window.hBack);
 
+    SetStretchBltMode(window.mem_dc, COLORONCOLOR);
+
+    int viewW = window.width / ZOOM;
+    int viewH = window.height / ZOOM;
+
     if (window.hBack) {
 
-        BitBlt(window.mem_dc, 0, 0, window.height, window.width, mapDC, camera.x, camera.y, SRCCOPY);
+        StretchBlt(window.mem_dc, 0, 0, window.height, window.width, mapDC, camera.x, camera.y, viewW, viewH, SRCCOPY);
 
     }
 
+    SelectObject(mapDC, hOld);
+    DeleteDC(mapDC);
 }
 
-void ShowCamera() {
-
-    camera.x = Hero.x - ;
-    camera.y = 0;
-    
-    
-
-
-}
 
 void ShowObject() {
 
-    ShowSprite(0, 0, window.width, window.height, window.hBack, false);
-    ShowSprite(Hero.x, Hero.y, Hero.widht, Hero.height, Hero.hBitmap, true);
+    ShowMap();
+    //ShowSprite(0, 0, window.width, window.height, window.hBack, false);
+    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht, Hero.height, Hero.hBitmap, true);
 
 }
 
@@ -145,6 +171,7 @@ void ProcessInput(WPARAM wParam) {
 
 void ProcessGame() {
 
+    UpdateCamera();
     //ProcessBall();
     
 

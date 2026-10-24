@@ -30,7 +30,7 @@ struct sprite {
 struct {
     float x, y;              
     float targetX, targetY;  
-    float smooth = 0.15f;    // speed
+    float smooth = 0.30f;    // speed
 } camera;
 
 struct {
@@ -39,7 +39,7 @@ struct {
 } game;
 
 sprite Hero;
-const int ZOOM = 6; 
+const int ZOOM = 4; 
 
 void InitWindow() {
 
@@ -62,7 +62,7 @@ void InitGame() {
     Hero.height = 40;
     Hero.x = 1024 / 2.0f - Hero.widht / 2.0f;  // center map
     Hero.y = 1024 / 2.0f - Hero.height / 2.0f;
-    Hero.speed = 40.0f;
+    Hero.speed = 20.0f;
 
 }
 
@@ -93,20 +93,19 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
 void UpdateCamera() {
 
-    camera.targetX = Hero.x + Hero.widht / 2.0f - window.width / 2.0f;
-    camera.targetY = Hero.y + Hero.height / 2.0f - window.height / 2.0f;
+    const float viewW = window.width / ZOOM;
+    const float viewH = window.height / ZOOM;
+
+    camera.targetX = Hero.x + Hero.widht / 2.0f - viewW / 2.0f;
+    camera.targetY = Hero.y + Hero.height / 2.0f - viewH / 2.0f;
     
     camera.x += (camera.targetX - camera.x) * camera.smooth;
     camera.y += (camera.targetY - camera.y) * camera.smooth;
 
     const float MAP_H = 1024, MAP_W = 1024;
-    const float viewW = window.width / ZOOM;
-    const float viewH = window.height / ZOOM;
 
-
-
-    //if (camera.x < 0) camera.x = 0;
-    //if (camera.y < 0) camera.y = 0;
+    if (camera.x < 0) camera.x = 0;
+    if (camera.y < 0) camera.y = 0;
     if (camera.x > MAP_W - viewW) camera.x = MAP_W - viewW;
     if (camera.y > MAP_H - viewH) camera.y = MAP_H - viewH;
 
@@ -126,7 +125,7 @@ void ShowMap() {
 
     if (window.hBack) {
 
-        StretchBlt(window.mem_dc, 0, 0, window.height, window.width, mapDC, camera.x, camera.y, viewW, viewH, SRCCOPY);
+        StretchBlt(window.mem_dc, 0, 0, window.width, window.height, mapDC, camera.x, camera.y, viewW, viewH, SRCCOPY);
 
     }
 
@@ -169,9 +168,21 @@ void ProcessInput(WPARAM wParam) {
 
 }
 
+void CheckWals() {
+
+    Hero.x = min(Hero.x, 1024 - Hero.widht);
+    Hero.x = max(Hero.x, 0);
+
+    Hero.y = min(Hero.y, 1024 - Hero.height);
+    Hero.y = max(Hero.y, 0); 
+
+
+}
+
 void ProcessGame() {
 
     UpdateCamera();
+    CheckWals();
     //ProcessBall();
     
 
@@ -227,7 +238,7 @@ int APIENTRY wWinMain( // Точка входа с поддержкой юник
         CLASS_NAME, 
         L"Roguelike prototype", 
         WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
-        800, 600, 
+        window.width, window.height, 
         NULL, NULL, hInstance, NULL
     );
 

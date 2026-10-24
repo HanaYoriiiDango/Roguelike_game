@@ -27,20 +27,10 @@ struct sprite {
 
 };
 
-struct Ray_ {
-    float pointX, pointY; 
-    float percentage; 
-    float length; 
-    float dx, dy; 
-    float reflectX, reflectY; 
-    float minLeft, minRight, minTop, minBottom;
-
-};
-
 struct {
     float x, y;              
-    float targetX, targetY;  // куда хотим приехать
-    float smooth = 0.15f;    // скорость догона (0..1)
+    float targetX, targetY;  
+    float smooth = 0.15f;    // speed
 } camera;
 
 struct {
@@ -69,7 +59,7 @@ void InitGame() {
 
     Hero.widht = 300;
     Hero.height = 40;
-    Hero.x = 1024 / 2.0f - Hero.widht / 2.0f;  // центр карты
+    Hero.x = 1024 / 2.0f - Hero.widht / 2.0f;  // center map
     Hero.y = 1024 / 2.0f - Hero.height / 2.0f;
     Hero.speed = 40.0f;
 
@@ -97,12 +87,36 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
 }
 
+void ShowMap() {
+
+    HDC mapDC = CreateCompatibleDC(window.mem_dc);
+    HBITMAP hOld = (HBITMAP)SelectObject(mapDC, window.hBack);
+
+    if (window.hBack) {
+
+        BitBlt(window.mem_dc, 0, 0, window.height, window.width, mapDC, camera.x, camera.y, SRCCOPY);
+
+    }
+
+}
+
+void ShowCamera() {
+
+    camera.x = Hero.x - ;
+    camera.y = 0;
+    
+    
+
+
+}
+
 void ShowObject() {
 
     ShowSprite(0, 0, window.width, window.height, window.hBack, false);
     ShowSprite(Hero.x, Hero.y, Hero.widht, Hero.height, Hero.hBitmap, true);
 
 }
+
 
 void ShowGame() {
 

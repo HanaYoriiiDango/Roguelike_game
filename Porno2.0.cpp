@@ -62,7 +62,7 @@ void InitGame() {
     Hero.height = 40;
     Hero.x = 1024 / 2.0f - Hero.widht / 2.0f;  // center map
     Hero.y = 1024 / 2.0f - Hero.height / 2.0f;
-    Hero.speed = 20.0f;
+    Hero.speed = 60.0f;
 
 }
 
@@ -159,22 +159,30 @@ void ShowGame() {
 
 void ProcessInput(WPARAM wParam) {
 
+    float slow = 0.15f;
+
     if (wParam == VK_ESCAPE) DestroyWindow(window.hwnd); // уничтожаем окно
-    if (wParam == 'W') Hero.y -= Hero.speed;
-    if (wParam == 'A') Hero.x -= Hero.speed;
-    if (wParam == 'S') Hero.y += Hero.speed;
-    if (wParam == 'D') Hero.x += Hero.speed;
+    if (wParam == 'W') Hero.y -= Hero.speed * slow;
+    if (wParam == 'A') Hero.x -= Hero.speed * slow;
+    if (wParam == 'S') Hero.y += Hero.speed * slow;
+    if (wParam == 'D') Hero.x += Hero.speed * slow;
     if (wParam == VK_SPACE) game.action = true;
 
 }
 
 void CheckWals() {
 
-    Hero.x = min(Hero.x, 1024 - Hero.widht);
-    Hero.x = max(Hero.x, 0);
+    if (Hero.x <= 0) Hero.x = 0;
+    if (Hero.x >= 1024 - Hero.widht) Hero.x = 1024 - Hero.widht;
+    if (Hero.y <= 0) Hero.y = 0;
+    if (Hero.y >= 1024 - Hero.widht) Hero.y = 1024 - Hero.widht;
+    
 
-    Hero.y = min(Hero.y, 1024 - Hero.height);
-    Hero.y = max(Hero.y, 0); 
+    //Hero.x = min(Hero.x, 1024 - Hero.widht);
+    //Hero.x = max(Hero.x, 0);
+
+    //Hero.y = min(Hero.y, 1024 - Hero.height);
+    //Hero.y = max(Hero.y, 0); 
 
 
 }

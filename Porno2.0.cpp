@@ -160,10 +160,10 @@ void ShowGame() {
 void ProcessInput(WPARAM wParam) {
 
     if (wParam == VK_ESCAPE) DestroyWindow(window.hwnd); // уничтожаем окно
-    if (wParam == VK_LEFT) Hero.x -= Hero.speed;
-    if (wParam == VK_RIGHT) Hero.x += Hero.speed;
-    if (wParam == VK_UP) Hero.y -= Hero.speed;
-    if (wParam == VK_DOWN) Hero.y += Hero.speed;
+    if (wParam == 'W') Hero.y -= Hero.speed;
+    if (wParam == 'A') Hero.x -= Hero.speed;
+    if (wParam == 'S') Hero.y += Hero.speed;
+    if (wParam == 'D') Hero.x += Hero.speed;
     if (wParam == VK_SPACE) game.action = true;
 
 }

@@ -11,7 +11,7 @@ using namespace std;
 //configuration::advanced::character set - not set - могу обращаться к структурам c typedef ? Alt+0215
 //linker::input::additional dependensies Msimg32.lib; Winmm.lib ?
 
-struct { // если делать через структуру
+struct { 
     HWND hwnd;
     HBITMAP hBack;
     HDC hdc, mem_dc;
@@ -28,17 +28,17 @@ struct sprite {
 };
 
 struct Ray_ {
-    float pointX, pointY; // начало отрисовки луча
-    float percentage; // процент удаленности от начальной точки
-    float length; // длина луча
-    float dx, dy; // отраженные вектора
+    float pointX, pointY; 
+    float percentage; 
+    float length; 
+    float dx, dy; 
     float reflectX, reflectY; 
     float minLeft, minRight, minTop, minBottom;
 
 };
 
 struct {
-    float x, y;              // мировая позиция левого верхнего угла вьюпорта
+    float x, y;              
     float targetX, targetY;  // куда хотим приехать
     float smooth = 0.15f;    // скорость догона (0..1)
 } camera;
@@ -58,7 +58,7 @@ void InitWindow() {
     window.width = r.right - r.left;
     window.height = r.bottom - r.top;
 
-}
+} 
 
 void InitGame() {
 

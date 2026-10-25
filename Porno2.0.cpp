@@ -69,6 +69,16 @@ void InitGame() {
     Hero.y = 1024 / 2.0f - Hero.height / 2.0f;
     Hero.speed = 60.0f;
 
+    for (int y = 0; y < MAP_H; y++) {
+        for (int x = 0; x < MAP_W; x++) {
+
+            if (x == 0 || x == MAP_W - 1 || y == 0 || y == MAP_H - 1)
+                map[y][x] = 1;
+            else 
+                map[y][x] = 0;
+
+        }
+    }
 }
 
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }

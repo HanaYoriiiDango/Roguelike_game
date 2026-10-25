@@ -183,9 +183,36 @@ bool IsWallAt(float worldX, float worldY) {
 
 }
 
+void MoveHero(float dx, float dy) {
+
+    float newX = Hero.x + dx; 
+
+    if (!IsWallAt(newX, Hero.y) &&
+        !IsWallAt(newX + Hero.widht, Hero.y) &&
+        !IsWallAt(newX, Hero.y + Hero.height) &&
+        !IsWallAt(newX + Hero.widht, Hero.y + Hero.height))
+    {
+
+        Hero.x = newX;
+
+    }
+
+    float newY = Hero.y + dy;
+
+    if (!IsWallAt(Hero.x, newY) &&
+        !IsWallAt(Hero.x + Hero.widht, newY) &&
+        !IsWallAt(Hero.x, newY + Hero.height) &&
+        !IsWallAt(Hero.x + Hero.widht, newY + Hero.height))
+    {
+
+        Hero.y = newY;
+
+    }
+}
+
 void ProcessInput(WPARAM wParam) {
 
-    float slow = 0.15f;
+    float step = Hero.speed * 0.15f;
 
     if (wParam == VK_ESCAPE) DestroyWindow(window.hwnd); // уничтожаем окно
     if (wParam == 'W') Hero.y -= Hero.speed * slow;

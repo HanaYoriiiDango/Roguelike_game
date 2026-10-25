@@ -215,36 +215,17 @@ void ProcessInput(WPARAM wParam) {
     float step = Hero.speed * 0.15f;
 
     if (wParam == VK_ESCAPE) DestroyWindow(window.hwnd); // уничтожаем окно
-    if (wParam == 'W') Hero.y -= Hero.speed * slow;
-    if (wParam == 'A') Hero.x -= Hero.speed * slow;
-    if (wParam == 'S') Hero.y += Hero.speed * slow;
-    if (wParam == 'D') Hero.x += Hero.speed * slow;
+    if (wParam == 'W') MoveHero(0, -step);
+    if (wParam == 'A') MoveHero(-step, 0);
+    if (wParam == 'S') MoveHero(0, step);
+    if (wParam == 'D') MoveHero(step, 0);
     if (wParam == VK_SPACE) game.action = true;
-
-}
-
-void CheckWals() {
-
-    if (Hero.x <= 0) Hero.x = 0;
-    if (Hero.x >= 1024 - Hero.widht) Hero.x = 1024 - Hero.widht;
-    if (Hero.y <= 0) Hero.y = 0;
-    if (Hero.y >= 1024 - Hero.widht) Hero.y = 1024 - Hero.widht;
-    
-
-    //Hero.x = min(Hero.x, 1024 - Hero.widht);
-    //Hero.x = max(Hero.x, 0);
-
-    //Hero.y = min(Hero.y, 1024 - Hero.height);
-    //Hero.y = max(Hero.y, 0); 
-
 
 }
 
 void ProcessGame() {
 
     UpdateCamera();
-    CheckWals();
-    //ProcessBall();
     
 
 }

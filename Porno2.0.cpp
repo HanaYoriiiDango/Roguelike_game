@@ -40,6 +40,11 @@ struct {
 
 sprite Hero;
 const int ZOOM = 4; 
+const int TILE = 32;           // размер тайла в мировых пикселях
+const int MAP_W = 1024 / TILE;
+const int MAP_H = 1024 / TILE;
+
+int map[MAP_H][MAP_W];
 
 void InitWindow() {
 
@@ -86,7 +91,7 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
     SelectObject(memDC, hOldBitmap);
 
-    DeleteObject(hOldBitmap);
+    //DeleteObject(hOldBitmap);
     DeleteDC(memDC);
 
 }

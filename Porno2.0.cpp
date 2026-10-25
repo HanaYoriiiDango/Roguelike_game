@@ -149,12 +149,29 @@ void ShowMap() {
     DeleteDC(mapDC);
 }
 
+void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color) {
+    int sx = ScreenX(worldX);
+    int sy = ScreenY(worldY);
+    int sw = (int)(w * ZOOM);
+    int sh = (int)(h * ZOOM);
+
+    HPEN pen = CreatePen(PS_SOLID, 2, color);
+    HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
+    HBRUSH oldBrush = (HBRUSH)SelectObject(window.mem_dc, GetStockObject(NULL_BRUSH));
+
+    Rectangle(window.mem_dc, sx, sy, sx + sw, sy + sh);
+
+    SelectObject(window.mem_dc, oldPen);
+    SelectObject(window.mem_dc, oldBrush);
+    DeleteObject(pen);
+}
 
 void ShowObject() {
 
     ShowMap();
     //ShowSprite(0, 0, window.width, window.height, window.hBack, false);
-    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht, Hero.height, Hero.hBitmap, true);
+    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht * ZOOM, Hero.height * ZOOM, Hero.hBitmap, false);
+    DrawDebugHitbox(Hero.x, Hero.y, Hero.widht, Hero.height, RGB(255, 0, 0));  // ← добавить
 
 }
 
@@ -211,15 +228,15 @@ void MoveHero(float dx, float dy) {
     }
 }
 
-void ProcessInput(WPARAM wParam) {
+void ProcessInput() {
 
     float step = Hero.speed * 0.15f;
     float dx = 0, dy = 0;
 
-    if (wParam == VK_ESCAPE) DestroyWindow(window.hwnd); // уничтожаем окно
+    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd); // уничтожаем окно
     if (keys['W']) dy -= step;
-    if (keys['A']) dy += step;
-    if (keys['S']) dx -= step;
+    if (keys['A']) dx -= step;
+    if (keys['S']) dy += step;
     if (keys['D']) dx += step;
     
     if (dx != 0 && dy != 0) {
@@ -232,6 +249,7 @@ void ProcessInput(WPARAM wParam) {
 
 void ProcessGame() {
 
+    ProcessInput();
     UpdateCamera();
     
 
@@ -375,7 +393,6 @@ LRESULT CALLBACK WndProc(
     case WM_KEYDOWN: // обработка нажатий клавиш 
 
         keys[wParam] = true;
-        ProcessInput(wParam);
         InvalidateRect(hwnd, NULL, TRUE);
 
         break;

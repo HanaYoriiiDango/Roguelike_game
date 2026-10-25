@@ -172,6 +172,17 @@ void ShowGame() {
     DeleteDC(window.mem_dc);
 }
 
+bool IsWallAt(float worldX, float worldY) {
+
+    int tx = (int)(worldX / TILE);
+    int ty = (int)(worldY / TILE);
+    
+    if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return true;
+    
+    return map[ty][tx] == 1; 
+
+}
+
 void ProcessInput(WPARAM wParam) {
 
     float slow = 0.15f;

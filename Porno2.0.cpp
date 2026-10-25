@@ -45,6 +45,7 @@ const int MAP_W = 1024 / TILE;
 const int MAP_H = 1024 / TILE;
 
 int map[MAP_H][MAP_W];
+bool keys[256] = {};
 
 void InitWindow() {
 
@@ -213,14 +214,20 @@ void MoveHero(float dx, float dy) {
 void ProcessInput(WPARAM wParam) {
 
     float step = Hero.speed * 0.15f;
+    float dx = 0, dy = 0;
 
     if (wParam == VK_ESCAPE) DestroyWindow(window.hwnd); // уничтожаем окно
-    if (wParam == 'W') MoveHero(0, -step);
-    if (wParam == 'A') MoveHero(-step, 0);
-    if (wParam == 'S') MoveHero(0, step);
-    if (wParam == 'D') MoveHero(step, 0);
-    if (wParam == VK_SPACE) game.action = true;
+    if (keys['W']) dy -= step;
+    if (keys['A']) dy += step;
+    if (keys['S']) dx -= step;
+    if (keys['D']) dx += step;
+    
+    if (dx != 0 && dy != 0) {
+        dx *= 0.7071f;
+        dy *= 0.7071f;
+    }
 
+    MoveHero(dx, dy);
 }
 
 void ProcessGame() {
@@ -367,11 +374,14 @@ LRESULT CALLBACK WndProc(
 
     case WM_KEYDOWN: // обработка нажатий клавиш 
 
+        keys[wParam] = true;
         ProcessInput(wParam);
         InvalidateRect(hwnd, NULL, TRUE);
 
         break;
-
+    case WM_KEYUP:
+        keys[wParam] = false;
+        break;
 
     case WM_DESTROY: // при уничтожении окна посылаем сообщение WM_QUIT - завершает цикл сообщений. 
 

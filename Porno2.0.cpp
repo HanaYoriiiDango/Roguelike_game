@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#pragma comment(lib, "Msimg32.lib")
 
 using namespace std;
 
@@ -47,6 +48,8 @@ const int MAP_H = 1024 / TILE;
 int map[MAP_H][MAP_W];
 bool keys[256] = {};
 
+bool showGrid = false;
+
 void InitWindow() {
 
     RECT r;
@@ -61,7 +64,7 @@ void InitGame() {
 
     srand(time(nullptr));
 
-    window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     Hero.widht = 40;
@@ -87,22 +90,20 @@ int ScreenY(float worldY) { return (int)((worldY - camera.y) * ZOOM); }
 
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
+    if (!hBitmap) return;
+
     BITMAP bm;
+    GetObject(hBitmap, sizeof(BITMAP), &bm);
+
     HDC memDC = CreateCompatibleDC(window.mem_dc);
     HBITMAP hOldBitmap = (HBITMAP)SelectObject(memDC, hBitmap);
 
-    if (hBitmap) {
+    SetStretchBltMode(window.mem_dc, COLORONCOLOR);
 
-        GetObject(hBitmap, sizeof(BITMAP), &bm);
-
-        if (transparent) TransparentBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, w, h, RGB(0, 0, 0));
-        else StretchBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
-
-    }
+    if (transparent) TransparentBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, bm.bmWidth, bm.bmHeight, RGB(0, 0, 0));
+    else StretchBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 
     SelectObject(memDC, hOldBitmap);
-
-    //DeleteObject(hOldBitmap);
     DeleteDC(memDC);
 
 }
@@ -166,11 +167,49 @@ void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF colo
     DeleteObject(pen);
 }
 
+void DrawGrid() {
+    if (!showGrid) return;
+
+    HPEN pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0)); // Чёрные линии
+    HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
+
+
+    float viewW = (float)window.width / ZOOM;
+    float viewH = (float)window.height / ZOOM;
+
+
+    int startCol = max(0, (int)(camera.x / TILE));
+    int endCol = min(MAP_W, (int)((camera.x + viewW) / TILE) + 1);
+
+    int startRow = max(0, (int)(camera.y / TILE));
+    int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
+    
+    // Вертикальные линии
+    for (int tx = startCol; tx <= endCol; ++tx) {
+        int sx = ScreenX(tx * TILE);
+        MoveToEx(window.mem_dc, sx, 0, NULL);
+        LineTo(window.mem_dc, sx, window.height);
+    }
+
+    // Горизонтальные линии
+    for (int ty = startRow; ty <= endRow; ++ty) {
+        int sy = ScreenY(ty * TILE);
+        MoveToEx(window.mem_dc, 0, sy, NULL);
+        LineTo(window.mem_dc, window.width, sy);
+    }
+
+    SelectObject(window.mem_dc, oldPen);
+    DeleteObject(pen);
+
+}
+
 void ShowObject() {
 
     ShowMap();
     //ShowSprite(0, 0, window.width, window.height, window.hBack, false);
-    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht * ZOOM, Hero.height * ZOOM, Hero.hBitmap, false);
+    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht * ZOOM, Hero.height * ZOOM, Hero.hBitmap, true);
+    DrawGrid();
+
     DrawDebugHitbox(Hero.x, Hero.y, Hero.widht, Hero.height, RGB(255, 0, 0));  // ← добавить
 
 }
@@ -229,6 +268,11 @@ void MoveHero(float dx, float dy) {
 }
 
 void ProcessInput() {
+
+    if (keys['G']) {
+        showGrid = !showGrid;
+        keys['G'] = false; 
+    }
 
     float step = Hero.speed * 0.15f;
     float dx = 0, dy = 0;

@@ -40,15 +40,17 @@ struct {
 } game;
 
 sprite Hero;
-const int ZOOM = 4; 
+const int ZOOM = 2; 
 const int TILE = 32;           // размер тайла в мировых пикселях
-const int MAP_W = 1024 / TILE;
-const int MAP_H = 1024 / TILE;
+const int MAP_W = 64;
+const int MAP_H = 64;
 
 int map[MAP_H][MAP_W];
 bool keys[256] = {};
 
 bool showGrid = false;
+HBITMAP hTexWall = NULL;
+HBITMAP hTexGrass = NULL;
 
 void InitWindow() {
 
@@ -64,13 +66,21 @@ void InitGame() {
 
     srand(time(nullptr));
 
-    window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    //window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    if (!hTexWall || !hTexGrass) {
+        MessageBoxW(NULL, L"Текстуры не загрузились! Проверь файлы wall.bmp и grass.bmp", L"Ошибка", MB_ICONERROR);
+    }
+
 
     Hero.widht = 40;
     Hero.height = 40;
-    Hero.x = 1024 / 2.0f - Hero.widht / 2.0f;  // center map
-    Hero.y = 1024 / 2.0f - Hero.height / 2.0f;
+    Hero.x = (MAP_W * TILE) / 2.0f - Hero.widht / 2.0f;
+    Hero.y = (MAP_H * TILE) / 2.0f - Hero.height / 2.0f;
     Hero.speed = 60.0f;
 
     for (int y = 0; y < MAP_H; y++) {
@@ -119,35 +129,46 @@ void UpdateCamera() {
     camera.x += (camera.targetX - camera.x) * camera.smooth;
     camera.y += (camera.targetY - camera.y) * camera.smooth;
 
-    const float MAP_H = 1024, MAP_W = 1024;
+    const float MAP_H_px = MAP_H * TILE;
+    const float MAP_W_px = MAP_W * TILE;
 
     if (camera.x < 0) camera.x = 0;
     if (camera.y < 0) camera.y = 0;
-    if (camera.x > MAP_W - viewW) camera.x = MAP_W - viewW;
-    if (camera.y > MAP_H - viewH) camera.y = MAP_H - viewH;
-
-
+    if (camera.x > MAP_W_px - viewW) camera.x = MAP_W_px - viewW;
+    if (camera.y > MAP_H_px - viewH) camera.y = MAP_H_px - viewH;
 
 }
 
 void ShowMap() {
 
-    HDC mapDC = CreateCompatibleDC(window.mem_dc);
-    HBITMAP hOld = (HBITMAP)SelectObject(mapDC, window.hBack);
+    RECT fullRect = { 0, 0, window.width, window.height };
+    HBRUSH bgBrush = CreateSolidBrush(RGB(20, 20, 20));
+    FillRect(window.mem_dc, &fullRect, bgBrush);
+    DeleteObject(bgBrush);
 
-    SetStretchBltMode(window.mem_dc, COLORONCOLOR);
+    float viewW = (float)window.width / ZOOM;
+    float viewH = (float)window.height / ZOOM;
 
-    int viewW = window.width / ZOOM;
-    int viewH = window.height / ZOOM;
+    int startCol = max(0, (int)(camera.x / TILE));
+    int endCol = min(MAP_W, (int)((camera.x + viewW) / TILE) + 1);
+    int startRow = max(0, (int)(camera.y / TILE));
+    int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
 
-    if (window.hBack) {
+    int size = TILE * ZOOM; // Размер тайла на экране
 
-        StretchBlt(window.mem_dc, 0, 0, window.width, window.height, mapDC, camera.x, camera.y, viewW, viewH, SRCCOPY);
+    for (int ty = startRow; ty < endRow; ++ty) {
+        for (int tx = startCol; tx < endCol; ++tx) {
 
+            int sx = ScreenX(tx * TILE);
+            int sy = ScreenY(ty * TILE);
+
+            // Выбираем текстуру в зависимости от значения в массиве
+            HBITMAP tex = (map[ty][tx] == 1) ? hTexWall : hTexGrass;
+
+            // Рисуем тайл (false = без прозрачности, StretchBlt растянет 32x32 до 64x64 при ZOOM=2)
+            ShowSprite(sx, sy, size, size, tex, false);
+        }
     }
-
-    SelectObject(mapDC, hOld);
-    DeleteDC(mapDC);
 }
 
 void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color) {
@@ -302,7 +323,10 @@ void ProcessGame() {
 void ClearGame() {
 
     DeleteObject(Hero.hBitmap);
-    DeleteObject(window.hBack);
+    //DeleteObject(window.hBack);
+    DeleteObject(hTexWall);
+    DeleteObject(hTexGrass);
+
 
 }
 

@@ -28,6 +28,11 @@ struct sprite {
 
 };
 
+struct Room {
+    int x, y; // координаты левого верхнего угла в ТАЙЛАХ
+    int w, h; // ширина и высота в ТАЙЛАХ
+};
+
 struct {
     float x, y;              
     float targetX, targetY;  

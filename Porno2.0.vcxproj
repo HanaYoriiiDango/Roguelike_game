@@ -130,7 +130,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Porno2.0.cpp" />
+    <ClCompile Include="Gameloop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Porno2.0.rc" />

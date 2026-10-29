@@ -31,6 +31,7 @@ Renderable renderables[MAX_ENTITIES];
 struct Collider { float w, h; };
 Collider colliders[MAX_ENTITIES];
 
+// object
 uint32_t HeroID = 0;
 
 const int ZOOM = 4;
@@ -45,13 +46,6 @@ struct {
 
 } window;
 
-struct sprite {
-    float x, y, w, h, speed;
-    float HitboxW, HitboxH;
-    HBITMAP hBitmap;
-
-};
-
 struct Room {
     int x, y; // in tiles
     int w, h; 
@@ -63,8 +57,6 @@ struct {
     float smooth = 0.30f;    
 
 } camera;
-
-sprite Hero;
  
 int map[MAP_H][MAP_W];
 bool keys[256] = {};
@@ -86,7 +78,7 @@ uint32_t CreateEntity() {
             return id; // Нашли свободный ID, возвращаем
         }
     }
-    return -1; // Мест нет (на 1000 сущностей в прототипе хватит с головой)
+    return -1; 
 }
 
 void InitWindow() {
@@ -197,14 +189,6 @@ void EntityInit() {
     // Collider (hitbox)
     hasCollider[HeroID] = true;
     colliders[HeroID] = { 20, 50 }; // ширина, высота
-
-    //Hero.x = (firstRoom.x + firstRoom.w / 2.0f) * TILE;
-    //Hero.y = (firstRoom.y + firstRoom.h / 2.0f) * TILE;
-    //Hero.w = 64;
-    //Hero.h = 64;
-    //Hero.HitboxW = 20;
-    //Hero.HitboxH = 50;
-    //Hero.speed = 60.0f;
 
 }
 
@@ -348,22 +332,6 @@ void DrawGrid() {
 
 }
 
-//void ShowObject() {
-//
-//    ShowMap();
-//    DrawGrid();
-//
-//    int drawX = ScreenX(Hero.x) - (Hero.w * ZOOM) / 2;
-//    int drawY = ScreenY(Hero.y) - (Hero.h * ZOOM) / 2;
-//
-//    ShowSprite(drawX, drawY, Hero.w * ZOOM, Hero.h * ZOOM, Hero.hBitmap, true);
-//
-//    float hx = Hero.x - Hero.HitboxW / 2.0f;
-//    float hy = Hero.y - Hero.HitboxH / 2.0f;
-//    DrawDebugHitbox(hx, hy, Hero.HitboxW, Hero.HitboxH, RGB(255, 0, 0));
-//
-//}
-
 void SystemRender() {
     ShowMap();
     DrawGrid();
@@ -402,7 +370,6 @@ void ShowGame() {
     HBITMAP hMemBmp = CreateCompatibleBitmap(window.hdc, window.width, window.height);
     HBITMAP hOldBmp = (HBITMAP)SelectObject(window.mem_dc, hMemBmp);
 
-    //ShowObject();
     SystemRender();
     BitBlt(window.hdc, 0, 0, window.width, window.height, window.mem_dc, 0, 0, SRCCOPY);
 
@@ -470,32 +437,6 @@ void SystemMovement() {
     }
 }
 
-void MoveHero(float dx, float dy) {
-
-    float hx = Hero.x - Hero.HitboxW / 2.0f;
-    float hy = Hero.y - Hero.HitboxH / 2.0f;
-    float newX = Hero.x + dx; 
-    float newHx = newX - Hero.HitboxW / 2.0f;
-
-    if (!IsWallAt(newHx, hy) &&
-        !IsWallAt(newHx + Hero.HitboxW, hy) &&
-        !IsWallAt(newHx, hy + Hero.HitboxH) &&
-        !IsWallAt(newHx + Hero.HitboxW, hy + Hero.HitboxH)) 
-    {
-        Hero.x = newX;
-    }
-
-    float newY = Hero.y + dy;
-    float newHy = newY - Hero.HitboxH / 2.0f;
-    if (!IsWallAt(hx, newHy) &&
-        !IsWallAt(hx + Hero.HitboxW, newHy) &&
-        !IsWallAt(hx, newHy + Hero.HitboxH) &&
-        !IsWallAt(hx + Hero.HitboxW, newHy + Hero.HitboxH)) 
-    {
-        Hero.y = newY;
-    }
-}
-
 void SystemInput() {
 
     if (keys['G']) {
@@ -525,30 +466,6 @@ void SystemInput() {
     velocities[HeroID].dy = dy;
 
 }
-
-//void ProcessInput() {
-//
-//    if (keys['G']) {
-//        showGrid = !showGrid;
-//        keys['G'] = false; 
-//    }
-//
-//    float step = Hero.speed * 0.15f;
-//    float dx = 0, dy = 0;
-//
-//    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd); // уничтожаем окно
-//    if (keys['W']) dy -= step;
-//    if (keys['A']) dx -= step;
-//    if (keys['S']) dy += step;
-//    if (keys['D']) dx += step;
-//    
-//    if (dx != 0 && dy != 0) {
-//        dx *= 0.7071f;
-//        dy *= 0.7071f;
-//    }
-//
-//    MoveHero(dx, dy);
-//}
 
 void ProcessGame() {
     SystemInput();

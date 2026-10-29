@@ -8,10 +8,6 @@
 
 using namespace std;
 
-//linker::system::subsystem  - Windows(/ SUBSYSTEM:WINDOWS) - ожидает wWinMain, а не main  ? Alt+251.
-//configuration::advanced::character set - not set - могу обращаться к структурам c typedef ? Alt+0215
-//linker::input::additional dependensies Msimg32.lib; Winmm.lib ?
-
 struct { 
     HWND hwnd;
     HBITMAP hBack;
@@ -36,7 +32,9 @@ struct Room {
 struct {
     float x, y;              
     float targetX, targetY;  
-    float smooth = 0.30f;    // speed
+    float smooth = 0.30f;    
+    const int ZOOM = 4;
+
 } camera;
 
 struct {
@@ -45,7 +43,7 @@ struct {
 } game;
 
 sprite Hero;
-const int ZOOM = 4; 
+ 
 const int TILE = 64;           // размер тайла в мировых пикселях
 const int MAP_W = 64;
 const int MAP_H = 64;
@@ -73,8 +71,6 @@ void InitGame() {
 
     srand(time(nullptr));
 
-
-    //window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"fiol_girl128px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -151,8 +147,8 @@ void InitGame() {
 
 }
 
-int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
-int ScreenY(float worldY) { return (int)((worldY - camera.y) * ZOOM); }
+int ScreenX(float worldX) { return (int)((worldX - camera.x) * camera.ZOOM); }
+int ScreenY(float worldY) { return (int)((worldY - camera.y) * camera.ZOOM); }
 
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
@@ -176,8 +172,8 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
 void UpdateCamera() {
 
-    const float viewW = window.width / ZOOM;
-    const float viewH = window.height / ZOOM;
+    const float viewW = window.width / camera.ZOOM;
+    const float viewH = window.height / camera.ZOOM;
 
     camera.targetX = Hero.x + Hero.widht / 2.0f - viewW / 2.0f;
     camera.targetY = Hero.y + Hero.height / 2.0f - viewH / 2.0f;
@@ -202,15 +198,15 @@ void ShowMap() {
     FillRect(window.mem_dc, &fullRect, bgBrush);
     DeleteObject(bgBrush);
 
-    float viewW = (float)window.width / ZOOM;
-    float viewH = (float)window.height / ZOOM;
+    float viewW = (float)window.width / camera.ZOOM;
+    float viewH = (float)window.height / camera.ZOOM;
 
     int startCol = max(0, (int)(camera.x / TILE));
     int endCol = min(MAP_W, (int)((camera.x + viewW) / TILE) + 1);
     int startRow = max(0, (int)(camera.y / TILE));
     int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
 
-    int size = TILE * ZOOM; // Размер тайла на экране
+    int size = TILE * camera.ZOOM; // Размер тайла на экране
 
     for (int ty = startRow; ty < endRow; ++ty) {
         for (int tx = startCol; tx < endCol; ++tx) {
@@ -230,8 +226,8 @@ void ShowMap() {
 void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color) {
     int sx = ScreenX(worldX);
     int sy = ScreenY(worldY);
-    int sw = (int)(w * ZOOM);
-    int sh = (int)(h * ZOOM);
+    int sw = (int)(w * camera.ZOOM);
+    int sh = (int)(h * camera.ZOOM);
 
     HPEN pen = CreatePen(PS_SOLID, 2, color);
     HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
@@ -251,8 +247,8 @@ void DrawGrid() {
     HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
 
 
-    float viewW = (float)window.width / ZOOM;
-    float viewH = (float)window.height / ZOOM;
+    float viewW = (float)window.width / camera.ZOOM;
+    float viewH = (float)window.height / camera.ZOOM;
 
 
     int startCol = max(0, (int)(camera.x / TILE));
@@ -283,11 +279,10 @@ void DrawGrid() {
 void ShowObject() {
 
     ShowMap();
-    //ShowSprite(0, 0, window.width, window.height, window.hBack, false);
-    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht * ZOOM, Hero.height * ZOOM, Hero.hBitmap, true);
+    ShowSprite(ScreenX(Hero.x), ScreenY(Hero.y), Hero.widht * camera.ZOOM, Hero.height * camera.ZOOM, Hero.hBitmap, true);
     DrawGrid();
 
-    DrawDebugHitbox(Hero.x, Hero.y, Hero.widht, Hero.height, RGB(255, 0, 0));  // ← добавить
+    //DrawDebugHitbox(Hero.x, Hero.y, Hero.widht, Hero.height, RGB(255, 0, 0));  
 
 }
 
@@ -379,48 +374,36 @@ void ProcessGame() {
 void ClearGame() {
 
     DeleteObject(Hero.hBitmap);
-    //DeleteObject(window.hBack);
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
 
 
 }
 
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); // просто объявление функции
-// так правильнее потому что компилятору в main нужно знать какой обработчик использовать для класса окна 
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 
 
-int APIENTRY wWinMain( // Точка входа с поддержкой юникода (WINAPI - для примеров в доках)
-	_In_ HINSTANCE hInstance, // "паспорт" приложения 
-	_In_opt_ HINSTANCE hPrevInstance, // дескриптор предыдущего экземпляра, в современных всегда NULL
-	_In_ PWSTR pCmdLine, // командная строка приложения, LPWSTR - указатель на строку в формате юникода
-	_In_ int nCmdShow // параметр с флагами, определяющими начальное состояние окна 
-
-	// _In_ - система аннотаций SAL (Source Annotation Language). Документируют код,
-	// явно показывая назначения параметров для компилятора
-	// предотвращает краши и ускоряет разработку, т.к в случае чего компилятор сообщит об ошибке
-
+int APIENTRY wWinMain( 
+	_In_ HINSTANCE hInstance, 
+	_In_opt_ HINSTANCE hPrevInstance, 
+	_In_ PWSTR pCmdLine,
+	_In_ int nCmdShow  
 ) 
-{ // 
-    // Создаю класс окна
-    const wchar_t* CLASS_NAME = L"Main";  // L префикс для широких символов
-    WNDCLASSEX wc = {}; // вся структура для регистрации класса окна инициализирована нулями пппп
+{ 
+    const wchar_t* CLASS_NAME = L"Main";  
+    WNDCLASSEX wc = {}; 
+    
+    wc.cbSize = sizeof(WNDCLASSEX); 
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInstance; 
+    wc.hCursor = NULL; 
+    wc.lpszClassName = CLASS_NAME;  
 
-    // то что нужно настроить более явно пишу тут:
-    wc.cbSize = sizeof(WNDCLASSEX); // размеры класса, так и не понял зачем
-    wc.lpfnWndProc = WndProc; // какой обработчик испоьзовать
-    wc.hInstance = hInstance; // дескриптор приложения
-    wc.hCursor = NULL; // скрываю курсор
-    wc.lpszClassName = CLASS_NAME;  // имя используемого класса
-
-    // Регистрирую класс окна
-    //RegisterClassEx(&wc); // хз нужна ли здесь проверка на создание класса через мэссэджбокс
-
-    if (!RegisterClassEx(&wc)) { // оказалась нужна 
+    if (!RegisterClassEx(&wc)) { 
         MessageBox(NULL, L"Ошибка регистрации класса окна!", L"Ошибка", MB_ICONERROR);
         return 0;
     }
 
-    window.width = GetSystemMetrics(SM_CXSCREEN); // эти переменные укажем в размер окна 
+    window.width = GetSystemMetrics(SM_CXSCREEN); 
     window.height = GetSystemMetrics(SM_CYSCREEN);
 
     window.hwnd = CreateWindowEx
@@ -433,65 +416,53 @@ int APIENTRY wWinMain( // Точка входа с поддержкой юник
         NULL, NULL, hInstance, NULL
     );
 
-    if (!window.hwnd) { // проверка на создание окна 
+    if (!window.hwnd) {
 
         MessageBox(
-            NULL, // здесь дескриптор окна,NULL значит что нет родитльеского
-            L"Ошибка создания окна!", // текст сообщения 
-            L"Ошибка", // заголовк окна 
-            MB_ICONERROR // флаг который задает отображение окна с кнопкой ок и иконокой ошибки
+            NULL, 
+            L"Ошибка создания окна!", 
+            L"Ошибка", 
+            MB_ICONERROR 
         );
-        return 0; // возвращаем нольб, заверщшаем программу 
+        return 0;  
 
     }
 
-    // эти функции идут всегда в паре и нужны чтобы управлять видимостью окна 
-    // и оптимизировать процесс отрисовку
-    // однако если использовать стиль WS_VISIBLE, то их применение не обязателно 
     InitWindow();
 
     ShowWindow(window.hwnd, SW_SHOW);
     UpdateWindow(window.hwnd);
 
-    MSG msg = {}; // структур дял хранения сообщений  
-
-    // GeMassage() извлекает сообщения из очереди 
-    // цикл будет работать до тех пор пока в очередь не поступит WM_QUIT
+    MSG msg = {}; 
 
     while (GetMessage(&msg, NULL, 0, 0)) {
 
-        TranslateMessage(&msg); // обрабатывает ввод клавиш и преобразует его в сообщения 
-        DispatchMessage(&msg); // передает сообщения в обработчик
+        TranslateMessage(&msg); 
+        DispatchMessage(&msg); 
 
     }
 }
 
-// Обработка сообщений
 LRESULT CALLBACK WndProc(
 
-    // LRESULT для возврата результата обработки сообщения
-    // CALLBACK - соглашение о вызове функций 
-    // "Когда придет посылка (событие), распакуй ее вот по этой схеме (функция CALLBACK)".
-    // Система работает так же: когда происходит событие она ище инструкцию-обработчик и выполняет ее
-
-    HWND hwnd, // дескриптор (идентификатьор) окна
-    UINT msg, // числвой код события 
-    WPARAM wParam, // доп инфа о сообщзениях
-    LPARAM lParam // WPARAM (обработка клавиш), LPARAM (движение курсора) 
+    HWND hwnd, 
+    UINT msg, 
+    WPARAM wParam, 
+    LPARAM lParam  
 
 ) {
 
     switch (msg) {
 
-    case WM_CREATE: // здесь загрузка всех ресурсов при поздании окна 
+    case WM_CREATE:
 
         InitGame();
-        ShowCursor(FALSE); // скрыл курсор
+        ShowCursor(FALSE); 
         SetTimer(hwnd, 1, 16, NULL);
 
         break;
 
-    case WM_PAINT:  // здесь будет вся отричовка в окне  
+    case WM_PAINT: 
     {   
         PAINTSTRUCT ps;
         window.hdc = BeginPaint(hwnd, &ps);
@@ -504,17 +475,13 @@ LRESULT CALLBACK WndProc(
 
     case WM_TIMER: 
     {
-        //GetCursorPos(&p);
-        //ball.x = p.x;
-        //ball.y = p.y;
-        
         ProcessGame();
         InvalidateRect(hwnd, NULL, FALSE);
     }
 
         break;
 
-    case WM_KEYDOWN: // обработка нажатий клавиш 
+    case WM_KEYDOWN: 
 
         keys[wParam] = true;
         InvalidateRect(hwnd, NULL, TRUE);
@@ -524,7 +491,7 @@ LRESULT CALLBACK WndProc(
         keys[wParam] = false;
         break;
 
-    case WM_DESTROY: // при уничтожении окна посылаем сообщение WM_QUIT - завершает цикл сообщений. 
+    case WM_DESTROY: 
 
         ClearGame();
         KillTimer(hwnd, 1);
@@ -532,7 +499,7 @@ LRESULT CALLBACK WndProc(
         break;
 
 
-    default: // здесь обработка всех сообщений по умолчанию, если мы не написали как их обрабюатывать
+    default: 
         return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 }

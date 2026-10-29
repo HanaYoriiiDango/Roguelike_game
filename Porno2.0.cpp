@@ -45,8 +45,8 @@ struct {
 } game;
 
 sprite Hero;
-const int ZOOM = 2; 
-const int TILE = 32;           // размер тайла в мировых пикселях
+const int ZOOM = 4; 
+const int TILE = 64;           // размер тайла в мировых пикселях
 const int MAP_W = 64;
 const int MAP_H = 64;
 
@@ -56,6 +56,8 @@ bool keys[256] = {};
 bool showGrid = false;
 HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
+
+vector<Room> rooms;
 
 void InitWindow() {
 
@@ -73,31 +75,80 @@ void InitGame() {
 
 
     //window.hBack = (HBITMAP)LoadImageW(NULL, L"test_map2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    Hero.hBitmap = (HBITMAP)LoadImageW(NULL, L"fiol_girl128px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     if (!hTexWall || !hTexGrass) {
         MessageBoxW(NULL, L"Текстуры не загрузились! Проверь файлы wall.bmp и grass.bmp", L"Ошибка", MB_ICONERROR);
     }
 
 
-    Hero.widht = 40;
-    Hero.height = 40;
-    Hero.x = (MAP_W * TILE) / 2.0f - Hero.widht / 2.0f;
-    Hero.y = (MAP_H * TILE) / 2.0f - Hero.height / 2.0f;
-    Hero.speed = 60.0f;
+   
 
+    // 1. Заливаем ВСЮ карту стенами
     for (int y = 0; y < MAP_H; y++) {
         for (int x = 0; x < MAP_W; x++) {
-
-            if (x == 0 || x == MAP_W - 1 || y == 0 || y == MAP_H - 1)
-                map[y][x] = 1;
-            else 
-                map[y][x] = 0;
-
+            map[y][x] = 1;
         }
     }
+
+    for (int i = 0; i < 15; i++) { // пытаемся создать 15 комнат
+        int w = 4 + rand() % 6;
+        int h = 4 + rand() % 6;
+        int x = 1 + rand() % (MAP_W - w - 2); // чтобы не прилипали к краю
+        int y = 1 + rand() % (MAP_H - h - 2);
+
+        bool intersects = false;
+        for (const Room& r : rooms) {
+            // Проверка на пересечение с отступом в 1 тайл
+            if (x < r.x + r.w + 1 && x + w + 1 > r.x &&
+                y < r.y + r.h + 1 && y + h + 1 > r.y) {
+                intersects = true;
+                break;
+            }
+        }
+
+        if (!intersects) {
+            // Выкапываем и добавляем в rooms
+            for (int ty = y; ty < y + h; ty++) {
+                for (int tx = x; tx < x + w; tx++) {
+                    map[ty][tx] = 0;
+                }
+            }
+            rooms.push_back({ x, y, w, h });
+        }
+    }
+
+    // 3. Ставим героя в центр ПЕРВОЙ комнаты
+    Room firstRoom = rooms[0];
+    // Центр комнаты в тайлах: x + w/2, y + h/2
+    // Переводим в пиксели: * TILE
+    Hero.x = (firstRoom.x + firstRoom.w / 2.0f) * TILE - Hero.widht / 2.0f;
+    Hero.y = (firstRoom.y + firstRoom.h / 2.0f) * TILE - Hero.height / 2.0f;
+    Hero.widht = 40;
+    Hero.height = 40;
+    Hero.speed = 60.0f;
+
+    for (int i = 0; i < rooms.size() - 1; i++) {
+        int cx1 = rooms[i].x + rooms[i].w / 2;
+        int cy1 = rooms[i].y + rooms[i].h / 2;
+        int cx2 = rooms[i + 1].x + rooms[i + 1].w / 2;
+        int cy2 = rooms[i + 1].y + rooms[i + 1].h / 2;
+
+        // Копаем по X от cx1 до cx2 на высоте cy1
+        int stepX = (cx1 < cx2) ? 1 : -1;
+        for (int x = cx1; x != cx2; x += stepX) {
+            map[cy1][x] = 0;
+        }
+
+        // Копаем по Y от cy1 до cy2 на высоте cx2
+        int stepY = (cy1 < cy2) ? 1 : -1;
+        for (int y = cy1; y != cy2; y += stepY) {
+            map[y][cx2] = 0;
+        }
+    }
+
 }
 
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }

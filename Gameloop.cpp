@@ -65,6 +65,7 @@ bool showGrid = false;
 HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
 HBITMAP hTexHero = NULL;
+HBITMAP hTexSpider = NULL;
 
 vector<Room> rooms;
 
@@ -96,6 +97,7 @@ void LoadBMP() {
     hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile128px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile128px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHero = (HBITMAP)LoadImageW(NULL, L"fiol_girl64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     if (!hTexHero) {
         MessageBoxW(NULL, L"Спрайт не загружен! Герой остался без кожи ((", L"Ошибка", MB_ICONERROR);
@@ -109,6 +111,9 @@ void LoadBMP() {
         MessageBoxW(NULL, L"Текстуры не загрузились!  --> grass.bmp", L"Ошибка", MB_ICONERROR);
     }
 
+    if (!hTexSpider) {
+        MessageBoxW(NULL, L"Спрайт паука не загружен!", L"Ошибка", MB_ICONERROR);
+    }
 }
 
 void GenerateMap() {
@@ -166,6 +171,23 @@ void GenerateMap() {
 
 }
 
+void SpawnSpider(float x, float y) {
+    uint32_t enemyID = CreateEntity(); // 1. Берем свободный ID
+
+    // 2. Навешиваем компоненты
+    hasPosition[enemyID] = true;
+    positions[enemyID] = { x, y };
+
+    hasVelocity[enemyID] = true;
+    velocities[enemyID] = { 0, 0 }; // Пока стоит на месте
+
+    hasRenderable[enemyID] = true;
+    renderables[enemyID] = { 64, 64, hTexSpider }; // Размер спрайта паука (например, 64x64)
+
+    hasCollider[enemyID] = true;
+    colliders[enemyID] = { 40, 40 }; // Хитбокс паука (чуть меньше спрайта)
+}
+
 void EntityInit() {
 
     HeroID = CreateEntity();
@@ -190,7 +212,16 @@ void EntityInit() {
     hasCollider[HeroID] = true;
     colliders[HeroID] = { 20, 50 }; // ширина, высота
 
+    // Спавним паука во второй комнате
+    if (rooms.size() > 1) {
+        Room secondRoom = rooms[0];
+        float spiderX = (secondRoom.x + secondRoom.w / 2.0f) * TILE;
+        float spiderY = (secondRoom.y + secondRoom.h / 2.0f) * TILE;
+        SpawnSpider(spiderX, spiderY);
+    }
+
 }
+
 
 void InitGame() {
 
@@ -200,6 +231,7 @@ void InitGame() {
     EntityInit();
 
 }
+
 
 
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
@@ -478,7 +510,7 @@ void ClearGame() {
     DeleteObject(hTexHero);
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
-
+    DeleteObject(hTexSpider);
 
 }
 

@@ -81,7 +81,7 @@ uint32_t CreateEntity() {
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) {
             active[id] = true;
-            return id; // Нашли свободный ID, возвращаем
+            return id; // free id return
         }
     }
     return -1; 
@@ -172,8 +172,6 @@ void GenerateMap() {
             map[y][cx2] = 0;
         }
     }
-
-
 }
 
 uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitBoxW, float HitBoxH) {
@@ -191,21 +189,19 @@ uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitB
     hasCollider[id] = true;
     colliders[id] = { HitBoxW, HitBoxH };
 
-    return id; // <-- Возвращаем ID!
+    return id; 
 }
 
 void SpawnEntityInRooms() {
 
-    for (int i = 1; i < rooms.size(); i++) { // i = 1, чтобы пропустить первую комнату с героем
-        int enemiesCount = 1 + rand() % 3; // от 1 до 3 врагов на комнату
+    for (int i = 1; i < rooms.size(); i++) { 
+        int enemiesCount = 1 + rand() % 3; 
 
         for (int j = 0; j < enemiesCount; j++) {
 
-            // 1. Выбираем случайный тайл ВНУТРИ комнаты
             int tx = rooms[i].x + (rand() % rooms[i].w);
             int ty = rooms[i].y + (rand() % rooms[i].h);
 
-            // 2. Переводим в мировые пиксели (центр тайла)
             float spawnX = (tx + 0.5f) * TILE;
             float spawnY = (ty + 0.5f) * TILE;
 
@@ -221,13 +217,8 @@ void EntityInit() {
     float startX = (firstRoom.x + firstRoom.w / 2.0f) * TILE;
     float startY = (firstRoom.y + firstRoom.h / 2.0f) * TILE;
 
-    // Спавним героя через универсальную функцию
     HeroID = SpawnEntity(startX, startY, 64, 64, hTexHero, 20, 50);
-
-    // Заодно можно выставить скорость героя, если нужно
-    // (Хотя velocity и так ставится в 0 внутри SpawnEntity)
-
-    // Спавним врагов в комнатах
+    
     SpawnEntityInRooms();
 }
 
@@ -240,8 +231,6 @@ void InitGame() {
     EntityInit();
 
 }
-
-
 
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
@@ -269,14 +258,13 @@ void UpdateCamera() {
     const float viewW = window.width / ZOOM;
     const float viewH = window.height / ZOOM;
 
-    // Берем позицию из компонента (это центр героя)
     camera.targetX = positions[HeroID].x - viewW / 2.0f;
     camera.targetY = positions[HeroID].y - viewH / 2.0f;
 
     camera.x += (camera.targetX - camera.x) * camera.smooth;
     camera.y += (camera.targetY - camera.y) * camera.smooth;
 
-    // Клэмп камеры
+    // clamp
     const float MAP_H_px = MAP_H * TILE;
     const float MAP_W_px = MAP_W * TILE;
 
@@ -301,7 +289,7 @@ void ShowMap() {
     int startRow = max(0, (int)(camera.y / TILE));
     int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
 
-    int size = (int)TILE * ZOOM; // Размер тайла на экране
+    int size = (int)TILE * ZOOM; 
 
     for (int ty = startRow; ty < endRow; ++ty) {
         for (int tx = startCol; tx < endCol; ++tx) {
@@ -309,10 +297,8 @@ void ShowMap() {
             int sx = ScreenX(tx * TILE);
             int sy = ScreenY(ty * TILE);
 
-            // Выбираем текстуру в зависимости от значения в массиве
             HBITMAP tex = (map[ty][tx] == 1) ? hTexWall : hTexGrass;
 
-            // Рисуем тайл (false = без прозрачности, StretchBlt растянет 32x32 до 64x64 при ZOOM=2)
             ShowSprite(sx, sy, size, size, tex, false);
         }
     }
@@ -340,7 +326,7 @@ void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF colo
 void DrawGrid() {
     if (!showGrid) return;
 
-    HPEN pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0)); // Чёрные линии
+    HPEN pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0)); 
     HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
 
 
@@ -354,14 +340,12 @@ void DrawGrid() {
     int startRow = max(0, (int)(camera.y / TILE));
     int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
     
-    // Вертикальные линии
     for (int tx = startCol; tx <= endCol; ++tx) {
         int sx = ScreenX(tx * TILE);
         MoveToEx(window.mem_dc, sx, 0, NULL);
         LineTo(window.mem_dc, sx, window.height);
     }
 
-    // Горизонтальные линии
     for (int ty = startRow; ty <= endRow; ++ty) {
         int sy = ScreenY(ty * TILE);
         MoveToEx(window.mem_dc, 0, sy, NULL);
@@ -377,24 +361,20 @@ void SystemRender() {
     ShowMap();
     DrawGrid();
 
-    // Перебираем все сущности
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) continue;
         if (!hasPosition[id] || !hasRenderable[id]) continue;
 
-        // Берем данные из компонентов
         float x = positions[id].x;
         float y = positions[id].y;
         int w = renderables[id].w;
         int h = renderables[id].h;
         HBITMAP bmp = renderables[id].bmp;
 
-        // Рисуем центрированно
         int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
         int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
         ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
 
-        // Отрисовка хитбокса (если включен дебаг)
         if (showGrid && hasCollider[id]) {
             float hw = colliders[id].w;
             float hh = colliders[id].h;
@@ -439,18 +419,15 @@ void SystemMovement() {
         float dx = velocities[id].dx;
         float dy = velocities[id].dy;
 
-        // Если скорость нулевая — нечего считать
         if (dx == 0 && dy == 0) continue;
 
         float newX = positions[id].x + dx;
         float newY = positions[id].y + dy;
 
-        // Коллизии (пока только для Героя)
         if (hasCollider[id]) {
             float hw = colliders[id].w / 2.0f;
             float hh = colliders[id].h / 2.0f;
 
-            // Проверка по X
             float newHx = newX - hw;
             float hy = positions[id].y - hh;
             if (!IsWallAt(newHx, hy) &&
@@ -460,7 +437,6 @@ void SystemMovement() {
                 positions[id].x = newX;
             }
 
-            // Проверка по Y
             float hx = positions[id].x - hw;
             float newHy = newY - hh;
             if (!IsWallAt(hx, newHy) &&
@@ -471,7 +447,6 @@ void SystemMovement() {
             }
         }
         else {
-            // Для всех остальных (враги, пули) — просто двигаем без коллизий
             positions[id].x = newX;
             positions[id].y = newY;
         }
@@ -485,11 +460,11 @@ void SystemInput() {
         keys['G'] = false;
     }
 
-    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd); // уничтожаем окно
+    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd); 
 
     if (!hasVelocity[HeroID]) return;
 
-    float speed = 60.0f * 0.15f; // Наша старая скорость
+    float speed = 60.0f * 0.15f; 
     float dx = 0, dy = 0;
 
     if (keys['W']) dy -= speed;
@@ -502,20 +477,17 @@ void SystemInput() {
         dy *= 0.7071f;
     }
 
-    // Записываем скорость в компонент!
     velocities[HeroID].dx = dx;
     velocities[HeroID].dy = dy;
 
 }
 
-// Простая функция проверки линии (есть ли стена между точками)
 bool IsWallBetween(float x1, float y1, float x2, float y2) {
     float dx = x2 - x1;
     float dy = y2 - y1;
     float dist = sqrt(dx * dx + dy * dy);
     if (dist < 1.0f) return false;
 
-    // Идём маленькими шагами (по 20 пикселей) и проверяем стены
     int steps = (int)(dist / 20.0f);
     for (int i = 0; i <= steps; i++) {
         float t = (float)i / steps;
@@ -532,7 +504,7 @@ void SystemAI() {
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id] || !hasAI[id] || !hasPosition[id] || !hasVelocity[id]) continue;
 
-        if (ais[id].type == 1) { // Погоня
+        if (ais[id].type == 1) { 
             float dx = positions[HeroID].x - positions[id].x;
             float dy = positions[HeroID].y - positions[id].y;
             float length = sqrt(dx * dx + dy * dy);
@@ -540,8 +512,8 @@ void SystemAI() {
             bool canSee = (length < ais[id].aggroRadius) && !IsWallBetween(positions[id].x, positions[id].y, positions[HeroID].x, positions[HeroID].y);
 
             if (canSee) {
-                ais[id].state = 1; // Вижу! Преследую!
-                ais[id].timer = 180.0f; // Запоминаю на 3 секунды
+                ais[id].state = 1; // persecution
+                ais[id].timer = 180.0f; // 3 seconds
             }
 
             if (ais[id].state == 1) {
@@ -554,15 +526,14 @@ void SystemAI() {
                     velocities[id] = { 0, 0 };
                 }
 
-                // Уменьшаем таймер памяти
                 ais[id].timer -= 1.0f;
                 if (ais[id].timer <= 0) {
-                    ais[id].state = 0; // Забыл
+                    ais[id].state = 0; 
                     velocities[id] = { 0, 0 };
                 }
             }
             else {
-                velocities[id] = { 0, 0 }; // Стою
+                velocities[id] = { 0, 0 }; // stop!
             }
         }
     }
@@ -697,13 +668,10 @@ LRESULT CALLBACK WndProc(
 
     case WM_MOUSEWHEEL:
     {
-        // wParam содержит дельту вращения (положительная — от себя, отрицательная — на себя)
         short delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
-        // Меняем зум (например, на 0.1 за щелчок)
-        ZOOM += delta / 120.0f * 0.2f; // 120 — стандартный шаг колеса
+        ZOOM += delta / 120.0f * 0.2f;
 
-        // Ограничиваем зум, чтобы не улететь в космос и не стать микроскопом
         if (ZOOM < 1.0f) ZOOM = 1.0f;
         if (ZOOM > 10.0f) ZOOM = 10.0f;
 

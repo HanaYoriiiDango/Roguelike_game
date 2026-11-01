@@ -99,8 +99,8 @@ void InitWindow() {
 
 void LoadBMP() {
 
-    hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile128px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile128px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHero = (HBITMAP)LoadImageW(NULL, L"fiol_girl64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
@@ -694,6 +694,22 @@ LRESULT CALLBACK WndProc(
     case WM_KEYUP:
         keys[wParam] = false;
         break;
+
+    case WM_MOUSEWHEEL:
+    {
+        // wParam содержит дельту вращения (положительная — от себя, отрицательная — на себя)
+        short delta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+        // Меняем зум (например, на 0.1 за щелчок)
+        ZOOM += delta / 120.0f * 0.2f; // 120 — стандартный шаг колеса
+
+        // Ограничиваем зум, чтобы не улететь в космос и не стать микроскопом
+        if (ZOOM < 1.0f) ZOOM = 1.0f;
+        if (ZOOM > 10.0f) ZOOM = 10.0f;
+
+        return 0;
+    }
+       break;
 
     case WM_DESTROY: 
 

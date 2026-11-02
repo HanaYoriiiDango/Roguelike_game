@@ -28,10 +28,10 @@ Velocity velocities[MAX_ENTITIES];
 struct Renderable { int w, h; HBITMAP bmp; };
 Renderable renderables[MAX_ENTITIES];
 
-struct Collider { float w, h; };
+struct Collider { float w, h; float offsetX, offsetY; };
 Collider colliders[MAX_ENTITIES];
 
-struct AI { int type; float speed; float aggroRadius;  int state; float timer; };
+struct AI { int type; float speed; float aggroRadius;  int state; float timer; float attackTimer; };
 AI ais[MAX_ENTITIES];
 bool hasAI[MAX_ENTITIES] = {};
 
@@ -75,6 +75,7 @@ int map[MAP_H][MAP_W];
 bool keys[256] = {};
 
 bool showGrid = false;
+bool mouseLeftDown = false;
 HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
 HBITMAP hTexHero = NULL;
@@ -182,7 +183,7 @@ void GenerateMap() {
     }
 }
 
-uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitBoxW, float HitBoxH) {
+uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitBoxW, float HitBoxH, float offsetX = 0, float offsetY = 0) {
     uint32_t id = CreateEntity();
 
     hasVelocity[id] = true;
@@ -195,7 +196,7 @@ uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitB
     renderables[id] = { w, h, hBitmap };
 
     hasCollider[id] = true;
-    colliders[id] = { HitBoxW, HitBoxH };
+    colliders[id] = { HitBoxW, HitBoxH, offsetX, offsetY };
 
     return id; 
 }
@@ -213,9 +214,11 @@ void SpawnEntityInRooms() {
             float spawnX = (tx + 0.5f) * TILE;
             float spawnY = (ty + 0.5f) * TILE;
 
-            uint32_t enemyID = SpawnEntity(spawnX, spawnY, 64, 64, hTexSpider, 40, 40);
+            uint32_t enemyID = SpawnEntity(spawnX, spawnY, 64, 64, hTexSpider, 20, 20, 0, 5);
             hasAI[enemyID] = true;
-            ais[enemyID] = { 1, 5.0f, 500.0f, 0, 0.0f };
+            ais[enemyID] = { 1, 5.0f * 0.15f, 500.0f, 0, 0.0f, 0.0f };
+            hasHealth[enemyID] = true;
+            healths[enemyID] = { 30.0f, 30.0f }; // У паука 30 HP
         }
     }
 }
@@ -225,8 +228,12 @@ void EntityInit() {
     float startX = (firstRoom.x + firstRoom.w / 2.0f) * TILE;
     float startY = (firstRoom.y + firstRoom.h / 2.0f) * TILE;
 
-    HeroID = SpawnEntity(startX, startY, 64, 64, hTexHero, 20, 50);
-    
+    HeroID = SpawnEntity(startX, startY, 64, 64, hTexHero, 24, 24, 0, 15);
+    hasHealth[HeroID] = true;
+    healths[HeroID] = { 100.0f, 100.0f }; 
+    hasWeapon[HeroID] = true;
+    weapons[HeroID] = { 20.0f, 30.0f, 0.0f }; // Урон 20, кулдаун 30 кадров (0.5 сек), таймер 0
+
     SpawnEntityInRooms();
 }
 
@@ -372,6 +379,7 @@ void SystemRender() {
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) continue;
         if (!hasPosition[id] || !hasRenderable[id]) continue;
+        if (id == HeroID) continue;
 
         float x = positions[id].x;
         float y = positions[id].y;
@@ -386,11 +394,41 @@ void SystemRender() {
         if (showGrid && hasCollider[id]) {
             float hw = colliders[id].w;
             float hh = colliders[id].h;
-            float hx = x - hw / 2.0f;
-            float hy = y - hh / 2.0f;
+            float hx = x + colliders[id].offsetX - hw / 2.0f;
+            float hy = y + colliders[id].offsetY - hh / 2.0f;
             DrawDebugHitbox(hx, hy, hw, hh, RGB(255, 0, 0));
         }
+
+        
     }
+
+    if (active[HeroID] && hasPosition[HeroID] && hasRenderable[HeroID]) {
+
+        float x = positions[HeroID].x;
+        float y = positions[HeroID].y;
+        int w = renderables[HeroID].w;
+        int h = renderables[HeroID].h;
+        HBITMAP bmp = renderables[HeroID].bmp;
+
+        int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
+        int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
+        ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
+
+        if (showGrid && hasCollider[HeroID]) {
+            float hw = colliders[HeroID].w;
+            float hh = colliders[HeroID].h;
+            float hx = x + colliders[HeroID].offsetX - hw / 2.0f;
+            float hy = y + colliders[HeroID].offsetY - hh / 2.0f;
+            DrawDebugHitbox(hx, hy, hw, hh, RGB(255, 0, 0));
+        }
+
+    }
+
+    wchar_t buf[64];
+    swprintf_s(buf, L"HP: %.0f", healths[HeroID].hp);
+    SetTextColor(window.mem_dc, RGB(255, 255, 255));
+    SetBkMode(window.mem_dc, TRANSPARENT);
+    TextOutW(window.mem_dc, 20, 20, buf, wcslen(buf));
 }
 
 void ShowGame() {
@@ -435,9 +473,13 @@ void SystemMovement() {
         if (hasCollider[id]) {
             float hw = colliders[id].w / 2.0f;
             float hh = colliders[id].h / 2.0f;
+            float cx = positions[id].x + colliders[id].offsetX; // Центр хитбокса X
+            float cy = positions[id].y + colliders[id].offsetY; // Центр хитбокса Y
 
-            float newHx = newX - hw;
-            float hy = positions[id].y - hh;
+            // Проверка по X
+            float newCx = newX + colliders[id].offsetX;
+            float newHx = newCx - hw;
+            float hy = cy - hh;
             if (!IsWallAt(newHx, hy) &&
                 !IsWallAt(newHx + colliders[id].w, hy) &&
                 !IsWallAt(newHx, hy + colliders[id].h) &&
@@ -445,8 +487,10 @@ void SystemMovement() {
                 positions[id].x = newX;
             }
 
-            float hx = positions[id].x - hw;
-            float newHy = newY - hh;
+            // Проверка по Y
+            float hx = positions[id].x + colliders[id].offsetX - hw;
+            float newCy = newY + colliders[id].offsetY;
+            float newHy = newCy - hh;
             if (!IsWallAt(hx, newHy) &&
                 !IsWallAt(hx + colliders[id].w, newHy) &&
                 !IsWallAt(hx, newHy + colliders[id].h) &&
@@ -525,7 +569,7 @@ void SystemAI() {
             }
 
             if (ais[id].state == 1) {
-                float minDist = 25.0f;
+                float minDist = 5.0f;
                 if (length > minDist) {
                     velocities[id].dx = (dx / length) * ais[id].speed;
                     velocities[id].dy = (dy / length) * ais[id].speed;
@@ -547,10 +591,92 @@ void SystemAI() {
     }
 }
 
+void SystemCombat() {
+
+
+    // 1. Бьём врагов
+    if (hasWeapon[HeroID] && hasPosition[HeroID]) {
+        weapons[HeroID].timer -= 1.0f;
+
+        if (mouseLeftDown && weapons[HeroID].timer <= 0) {
+            weapons[HeroID].timer = weapons[HeroID].cooldown;
+            mouseLeftDown = false; // <-- Сбрасываем, чтобы один клик = один удар
+
+            for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+                if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
+                if (id == HeroID) continue;
+
+                float dx = (positions[id].x + colliders[id].offsetX) - (positions[HeroID].x + colliders[HeroID].offsetX);
+                float dy = (positions[id].y + colliders[id].offsetY) - (positions[HeroID].y + colliders[HeroID].offsetY);
+                float dist = sqrt(dx * dx + dy * dy);
+
+                if (dist < 150.0f) {
+                    healths[id].hp -= weapons[HeroID].damage;
+                }
+            }
+        }
+    }
+
+    // Враги кусают героя
+    if (hasHealth[HeroID] && hasPosition[HeroID]) {
+        for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+            if (!active[id] || !hasAI[id] || !hasHealth[id] || !hasPosition[id]) continue;
+            if (id == HeroID) continue;
+
+            // Уменьшаем таймер атаки
+            ais[id].attackTimer -= 1.0f;
+
+            float heroHalfW = colliders[HeroID].w / 2.0f;
+            float heroHalfH = colliders[HeroID].h / 2.0f;
+            float enemyHalfW = colliders[id].w / 2.0f;
+            float enemyHalfH = colliders[id].h / 2.0f;
+
+            float heroCx = positions[HeroID].x + colliders[HeroID].offsetX;
+            float heroCy = positions[HeroID].y + colliders[HeroID].offsetY;
+            float enemyCx = positions[id].x + colliders[id].offsetX;
+            float enemyCy = positions[id].y + colliders[id].offsetY;
+
+            bool overlapX = abs(enemyCx - heroCx) < (heroHalfW + enemyHalfW);
+            bool overlapY = abs(enemyCy - heroCy) < (heroHalfH + enemyHalfH);
+
+
+            float dx = positions[id].x - positions[HeroID].x;
+            float dy = positions[id].y - positions[HeroID].y;
+            float dist = sqrt(dx * dx + dy * dy);
+
+            if (overlapX && overlapY) { // Хитбоксы пересеклись
+                if (ais[id].attackTimer <= 0) {
+                    healths[HeroID].hp -= 5.0f;
+                    ais[id].attackTimer = 30.0f;
+                }
+            }
+        }
+    }
+}
+
+void SystemDeath() {
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id]) continue;
+        if (hasHealth[id] && healths[id].hp <= 0) {
+            active[id] = false; // Удаляем сущность
+            // Сброс флагов, чтобы не мусорить
+            hasPosition[id] = false;
+            hasVelocity[id] = false;
+            hasRenderable[id] = false;
+            hasCollider[id] = false;
+            hasHealth[id] = false;
+            hasAI[id] = false;
+            hasWeapon[id] = false;
+        }
+    }
+}
+
 void ProcessGame() {
     SystemInput();
     SystemAI();
     SystemMovement();
+    SystemCombat();   
+    SystemDeath();
     UpdateCamera();
 }
 
@@ -686,6 +812,14 @@ LRESULT CALLBACK WndProc(
         return 0;
     }
        break;
+
+    case WM_LBUTTONDOWN:
+        mouseLeftDown = true;
+        break;
+
+    case WM_LBUTTONUP:
+        mouseLeftDown = false;
+        break;
 
     case WM_DESTROY: 
 

@@ -35,6 +35,14 @@ struct AI { int type; float speed; float aggroRadius;  int state; float timer; }
 AI ais[MAX_ENTITIES];
 bool hasAI[MAX_ENTITIES] = {};
 
+struct Health { float hp; float maxHp; };
+Health healths[MAX_ENTITIES];
+bool hasHealth[MAX_ENTITIES] = {};
+
+struct Weapon { float damage; float cooldown; float timer; };
+Weapon weapons[MAX_ENTITIES];
+bool hasWeapon[MAX_ENTITIES] = {};
+
 
 // object
 uint32_t HeroID = 0;

@@ -43,6 +43,22 @@ struct Weapon { float damage; float cooldown; float timer; };
 Weapon weapons[MAX_ENTITIES];
 bool hasWeapon[MAX_ENTITIES] = {};
 
+struct Direction {
+    int facing; // 0 = Down, 1 = Up, 2 = Left, 3 = Right
+};
+Direction directions[MAX_ENTITIES];
+bool hasDirection[MAX_ENTITIES] = {};
+
+struct Animation {
+    HBITMAP frames[8];   // До 8 кадров
+    int frameCount;      // Сколько кадров реально
+    int currentFrame;    // Текущий кадр
+    float frameTimer;    // Таймер
+    float frameDuration; // Задержка (в кадрах игры)
+    int state;           // 0 = idle, 1 = walk, 2 = attack
+};
+Animation animations[MAX_ENTITIES];
+bool hasAnimation[MAX_ENTITIES] = {};
 
 // object
 uint32_t HeroID = 0;
@@ -72,6 +88,17 @@ const int TILE = 128; // tiles in world px
 const int MAP_W = 64;
 const int MAP_H = 64;
 
+const float HERO_SPEED = 60.0f;
+const float HERO_ATTACK_RADIUS = 150.0f;
+const float HERO_DAMAGE = 20.0f;
+const float HERO_ATTACK_COOLDOWN = 30.0f;
+
+const float SPIDER_SPEED = 5.0f;
+const float SPIDER_HP = 30.0f;
+const float SPIDER_DAMAGE = 5.0f;
+const float SPIDER_ATTACK_COOLDOWN = 30.0f;
+const float SPIDER_AGGRO_RADIUS = 500.0f;
+
 int map[MAP_H][MAP_W];
 bool keys[256] = {};
 
@@ -81,6 +108,8 @@ HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
 HBITMAP hTexHero = NULL;
 HBITMAP hTexSpider = NULL;
+HBITMAP hTexHeroRightIdle = NULL;
+HBITMAP hTexHeroRightWalk[8] = { NULL }; // Массив из 8 кадров
 
 vector<Room> rooms;
 
@@ -113,6 +142,24 @@ bool IsWallBetween(float x1, float y1, float x2, float y2) {
     return false;
 }
 
+// Расстояние между центрами спрайтов (для ИИ)
+float DistanceBetweenSprites(uint32_t a, uint32_t b) {
+    float dx = positions[a].x - positions[b].x;
+    float dy = positions[a].y - positions[b].y;
+    return sqrt(dx * dx + dy * dy);
+}
+
+// Расстояние между центрами хитбоксов (для боя)
+float DistanceBetweenHitboxes(uint32_t a, uint32_t b) {
+    float ax = positions[a].x + (hasCollider[a] ? colliders[a].offsetX : 0.0f);
+    float ay = positions[a].y + (hasCollider[a] ? colliders[a].offsetY : 0.0f);
+    float bx = positions[b].x + (hasCollider[b] ? colliders[b].offsetX : 0.0f);
+    float by = positions[b].y + (hasCollider[b] ? colliders[b].offsetY : 0.0f);
+    float dx = ax - bx;
+    float dy = ay - by;
+    return sqrt(dx * dx + dy * dy);
+}
+
 // INITIALIZATION ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 void InitWindow() {
@@ -131,6 +178,24 @@ void LoadBMP() {
     hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHero = (HBITMAP)LoadImageW(NULL, L"fiol_girl64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroRightIdle = (HBITMAP)LoadImageW(NULL, L"hero_right_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroRightWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightWalk[2] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightWalk[3] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    for (int i = 0; i < 7; i++) {
+        if (!hTexHeroRightWalk[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load right walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
 
     if (!hTexHero) {
         MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
@@ -250,9 +315,9 @@ void SpawnEntityInRooms() {
 
             uint32_t enemyID = SpawnEntity(spawnX, spawnY, 64, 64, hTexSpider, 20, 20, 0, 5);
             hasAI[enemyID] = true;
-            ais[enemyID] = { 1, 5.0f * 0.15f, 500.0f, 0, 0.0f, 0.0f };
+            ais[enemyID] = { 1, SPIDER_SPEED * 0.15f, SPIDER_AGGRO_RADIUS, 0, 0.0f, 0.0f };
             hasHealth[enemyID] = true;
-            healths[enemyID] = { 30.0f, 30.0f }; 
+            healths[enemyID] = { SPIDER_HP, SPIDER_HP };
         }
     }
 }
@@ -266,7 +331,7 @@ void EntityInit() {
     hasHealth[HeroID] = true;
     healths[HeroID] = { 100.0f, 100.0f }; 
     hasWeapon[HeroID] = true;
-    weapons[HeroID] = { 20.0f, 30.0f, 0.0f }; 
+    weapons[HeroID] = { HERO_DAMAGE, HERO_ATTACK_COOLDOWN, 0.0f };
 
     SpawnEntityInRooms();
 } 
@@ -468,7 +533,7 @@ void SystemInput() {
 
     if (!hasVelocity[HeroID]) return;
 
-    float speed = 60.0f * 0.15f; 
+    float speed = HERO_SPEED * 0.15f; 
     float dx = 0, dy = 0;
 
     if (keys['W']) dy -= speed;
@@ -487,6 +552,8 @@ void SystemInput() {
 }
 
 // GAME SYSTEMS ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
 void SystemMovement() {
 
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
@@ -534,6 +601,14 @@ void SystemMovement() {
     }
 }   
 
+bool EnemyCanSeeHero(uint32_t id) {
+    float dx = positions[HeroID].x - positions[id].x;
+    float dy = positions[HeroID].y - positions[id].y;
+    float length = sqrt(dx * dx + dy * dy);
+    return (length < ais[id].aggroRadius)
+        && !IsWallBetween(positions[id].x, positions[id].y, positions[HeroID].x, positions[HeroID].y);
+}
+
 void SystemAI() {
     if (!hasPosition[HeroID]) return;
 
@@ -541,11 +616,12 @@ void SystemAI() {
         if (!active[id] || !hasAI[id] || !hasPosition[id] || !hasVelocity[id]) continue;
 
         if (ais[id].type == 1) { 
+            
             float dx = positions[HeroID].x - positions[id].x;
             float dy = positions[HeroID].y - positions[id].y;
             float length = sqrt(dx * dx + dy * dy);
 
-            bool canSee = (length < ais[id].aggroRadius) && !IsWallBetween(positions[id].x, positions[id].y, positions[HeroID].x, positions[HeroID].y);
+            bool canSee = EnemyCanSeeHero(id);
 
             if (canSee) {
                 ais[id].state = 1; // persecution
@@ -587,11 +663,9 @@ void SystemCombat() {
                 if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
                 if (id == HeroID) continue;
 
-                float dx = (positions[id].x + colliders[id].offsetX) - (positions[HeroID].x + colliders[HeroID].offsetX);
-                float dy = (positions[id].y + colliders[id].offsetY) - (positions[HeroID].y + colliders[HeroID].offsetY);
-                float dist = sqrt(dx * dx + dy * dy);
+                float dist = DistanceBetweenHitboxes(id, HeroID);
 
-                if (dist < 150.0f) {
+                if (dist < HERO_ATTACK_RADIUS) {
                     healths[id].hp -= weapons[HeroID].damage;
                 }
             }
@@ -618,15 +692,10 @@ void SystemCombat() {
             bool overlapX = abs(enemyCx - heroCx) < (heroHalfW + enemyHalfW);
             bool overlapY = abs(enemyCy - heroCy) < (heroHalfH + enemyHalfH);
 
-
-            float dx = positions[id].x - positions[HeroID].x;
-            float dy = positions[id].y - positions[HeroID].y;
-            float dist = sqrt(dx * dx + dy * dy);
-
             if (overlapX && overlapY) {
                 if (ais[id].attackTimer <= 0) {
-                    healths[HeroID].hp -= 5.0f;
-                    ais[id].attackTimer = 30.0f;
+                    healths[HeroID].hp -= SPIDER_DAMAGE;
+                    ais[id].attackTimer = SPIDER_ATTACK_COOLDOWN;
                 }
             }
         }

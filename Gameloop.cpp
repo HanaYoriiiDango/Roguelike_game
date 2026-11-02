@@ -333,6 +333,17 @@ void EntityInit() {
     hasWeapon[HeroID] = true;
     weapons[HeroID] = { HERO_DAMAGE, HERO_ATTACK_COOLDOWN, 0.0f };
 
+    hasDirection[HeroID] = true;
+    directions[HeroID].facing = 0; // Смотрит вниз по умолчанию
+
+    hasAnimation[HeroID] = true;
+    animations[HeroID].frameCount = 1;
+    animations[HeroID].currentFrame = 0;
+    animations[HeroID].frameTimer = 0.0f;
+    animations[HeroID].frameDuration = 8.0f; // Скорость смены кадров
+    animations[HeroID].state = 0; // 0 = idle
+    animations[HeroID].frames[0] = hTexHero; // Пока дефолтный спрайт
+
     SpawnEntityInRooms();
 } 
 
@@ -442,18 +453,33 @@ void ShowMap() {
 }
 
 void DrawEntity(uint32_t id) {
-    if (!active[id] || !hasPosition[id] || !hasRenderable[id]) return;
+    if (!active[id] || !hasPosition[id]) return;
+
+    // Выбираем картинку: анимация или обычный renderable
+    HBITMAP bmp = NULL;
+    if (hasAnimation[id] && animations[id].frameCount > 0) {
+        bmp = animations[id].frames[animations[id].currentFrame];
+    }
+    else if (hasRenderable[id]) {
+        bmp = renderables[id].bmp;
+    }
+
+    if (!bmp) return;
+
+    int w = 64, h = 64; // Размер спрайта (у нас 64x64)
+    if (hasRenderable[id]) {
+        w = renderables[id].w;
+        h = renderables[id].h;
+    }
 
     float x = positions[id].x;
     float y = positions[id].y;
-    int w = renderables[id].w;
-    int h = renderables[id].h;
-    HBITMAP bmp = renderables[id].bmp;
 
     int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
     int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
     ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
 
+    // Хитбокс для дебага
     if (showGrid && hasCollider[id]) {
         float hw = colliders[id].w;
         float hh = colliders[id].h;
@@ -529,11 +555,11 @@ void SystemInput() {
         keys['G'] = false;
     }
 
-    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd); 
+    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd);
 
     if (!hasVelocity[HeroID]) return;
 
-    float speed = HERO_SPEED * 0.15f; 
+    float speed = HERO_SPEED * 0.15f;
     float dx = 0, dy = 0;
 
     if (keys['W']) dy -= speed;
@@ -549,6 +575,48 @@ void SystemInput() {
     velocities[HeroID].dx = dx;
     velocities[HeroID].dy = dy;
 
+    // --- ANIMATION ---
+    if (hasAnimation[HeroID]) {
+        bool isMoving = (dx != 0 || dy != 0);
+
+        // 1. Определяем направление
+        if (isMoving) {
+            if (abs(dx) > abs(dy)) {
+                directions[HeroID].facing = (dx < 0) ? 2 : 3; // Left : Right
+            }
+            else {
+                directions[HeroID].facing = (dy < 0) ? 1 : 0; // Up : Down
+            }
+        }
+
+        // 2. Переключаем состояние (idle <-> walk)
+        int targetState = isMoving ? 1 : 0; // 1 = walk, 0 = idle
+
+        if (animations[HeroID].state != targetState) {
+            animations[HeroID].state = targetState;
+            animations[HeroID].currentFrame = 0;
+            animations[HeroID].frameTimer = 0.0f;
+
+            // Настраиваем кадры в зависимости от направления и состояния
+            if (directions[HeroID].facing == 3) { // Right
+                if (targetState == 1) { // Walk
+                    animations[HeroID].frameCount = 7;
+                    for (int i = 0; i < 7; i++) {
+                        animations[HeroID].frames[i] = hTexHeroRightWalk[i];
+                    }
+                }
+                else { // Idle
+                    animations[HeroID].frameCount = 1;
+                    animations[HeroID].frames[0] = hTexHeroRightIdle; // Твой idle для right
+                }
+            }
+            else {
+                // Остальные направления пока используют дефолтный спрайт
+                animations[HeroID].frameCount = 1;
+                animations[HeroID].frames[0] = hTexHero;
+            }
+        }
+    }
 }
 
 // GAME SYSTEMS ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -718,6 +786,21 @@ void SystemDeath() {
     }
 }
 
+void SystemAnimation() {
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasAnimation[id]) continue;
+        Animation& anim = animations[id];
+
+        if (anim.frameCount <= 1) continue; // Если 1 кадр — нечего менять
+
+        anim.frameTimer += 1.0f;
+        if (anim.frameTimer >= anim.frameDuration) {
+            anim.frameTimer = 0.0f;
+            anim.currentFrame = (anim.currentFrame + 1) % anim.frameCount;
+        }
+    }
+}
+
 // GAMELOOP ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 void InitGame() {
@@ -734,6 +817,7 @@ void ProcessGame() {
     SystemAI();
     SystemMovement();
     SystemCombat();   
+    SystemAnimation();
     SystemDeath();
     UpdateCamera();
 }
@@ -743,7 +827,10 @@ void ClearGame() {
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
     DeleteObject(hTexSpider);
-
+    DeleteObject(hTexHeroRightIdle);
+    for (int i = 0; i < 7; i++) {
+        if (hTexHeroRightWalk[i]) DeleteObject(hTexHeroRightWalk[i]);
+    }
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 

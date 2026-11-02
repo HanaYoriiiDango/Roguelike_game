@@ -115,6 +115,9 @@ HBITMAP hTexHeroRightWalk[8] = { NULL }; // Массив из 8 кадров
 HBITMAP hTexHeroLeftIdle = NULL;
 HBITMAP hTexHeroLeftWalk[8] = { NULL };
 
+HBITMAP hTexHeroUpIdle = NULL;
+HBITMAP hTexHeroUpWalk[8] = { NULL };
+
 vector<Room> rooms;
 
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
@@ -202,6 +205,24 @@ void LoadBMP() {
     hTexHeroLeftWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroUpIdle = (HBITMAP)LoadImageW(NULL, L"hero_Up_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroUpWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpWalk[2] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpWalk[3] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    for (int i = 0; i < 7; i++) {
+        if (!hTexHeroUpWalk[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load up walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
 
     for (int i = 0; i < 7; i++) {
         if (!hTexHeroRightWalk[i]) {
@@ -383,7 +404,7 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
     SetStretchBltMode(window.mem_dc, COLORONCOLOR);
 
-    if (transparent) TransparentBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, bm.bmWidth, bm.bmHeight, RGB(0, 0, 0));
+    if (transparent) TransparentBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, bm.bmWidth, bm.bmHeight, RGB(255, 255, 255));
     else StretchBlt(window.mem_dc, x, y, w, h, memDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 
     SelectObject(memDC, hOldBitmap);
@@ -620,7 +641,19 @@ void SystemInput() {
             animations[HeroID].frameTimer = 0.0f;
 
             // Настраиваем кадры в зависимости от направления и состояния
-            if (directions[HeroID].facing == 2) { // Left
+            if (directions[HeroID].facing == 1) { // up
+                if (targetState == 1) { // Walk
+                    animations[HeroID].frameCount = 7;
+                    for (int i = 0; i < 7; i++) {
+                        animations[HeroID].frames[i] = hTexHeroUpWalk[i];
+                    }
+                }
+                else { // Idle
+                    animations[HeroID].frameCount = 1;
+                    animations[HeroID].frames[0] = hTexHeroUpIdle;
+                }
+            }
+            else if (directions[HeroID].facing == 2) { // Left
                 if (targetState == 1) { // Walk
                     animations[HeroID].frameCount = 7;
                     for (int i = 0; i < 7; i++) {
@@ -870,6 +903,11 @@ void ClearGame() {
     DeleteObject(hTexHeroLeftIdle);
     for (int i = 0; i < 7; i++) {
         if (hTexHeroLeftWalk[i]) DeleteObject(hTexHeroLeftWalk[i]);
+    }
+
+    DeleteObject(hTexHeroUpIdle);
+    for (int i = 0; i < 7; i++) {
+        if (hTexHeroUpWalk[i]) DeleteObject(hTexHeroUpWalk[i]);
     }
 
 }

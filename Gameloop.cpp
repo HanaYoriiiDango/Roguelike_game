@@ -47,11 +47,6 @@ bool hasWeapon[MAX_ENTITIES] = {};
 // object
 uint32_t HeroID = 0;
 
-float ZOOM = 4.0f;
-const int TILE = 128; // tiles in world px
-const int MAP_W = 64;
-const int MAP_H = 64;
-
 struct { 
     HWND hwnd;
     HDC hdc, mem_dc;
@@ -70,7 +65,13 @@ struct {
     float smooth = 0.30f;    
 
 } camera;
- 
+
+// SUPPORT ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+float ZOOM = 4.0f;
+const int TILE = 128; // tiles in world px
+const int MAP_W = 64;
+const int MAP_H = 64;
+
 int map[MAP_H][MAP_W];
 bool keys[256] = {};
 
@@ -86,15 +87,33 @@ vector<Room> rooms;
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
 int ScreenY(float worldY) { return (int)((worldY - camera.y) * ZOOM); }
 
-uint32_t CreateEntity() {
-    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-        if (!active[id]) {
-            active[id] = true;
-            return id; // free id return
-        }
-    }
-    return -1; 
+bool IsWallAt(float worldX, float worldY) {
+
+    int tx = (int)(worldX / TILE);
+    int ty = (int)(worldY / TILE);
+    
+    if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return true;
+    
+    return map[ty][tx] == 1; 
+
 }
+bool IsWallBetween(float x1, float y1, float x2, float y2) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float dist = sqrt(dx * dx + dy * dy);
+    if (dist < 1.0f) return false;
+
+    int steps = (int)(dist / 20.0f);
+    for (int i = 0; i <= steps; i++) {
+        float t = (float)i / steps;
+        float px = x1 + dx * t;
+        float py = y1 + dy * t;
+        if (IsWallAt(px, py)) return true;
+    }
+    return false;
+}
+
+// INITIALIZATION ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 void InitWindow() {
 
@@ -114,21 +133,54 @@ void LoadBMP() {
     hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     if (!hTexHero) {
-        MessageBoxW(NULL, L"Спрайт не загружен! Герой остался без кожи ((", L"Ошибка", MB_ICONERROR);
+        MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
     }
 
     if (!hTexWall) {
-        MessageBoxW(NULL, L"Текстуры не загрузились!  --> wall.bmp", L"Ошибка", MB_ICONERROR);
+        MessageBoxW(NULL, L"The textures didn’t load! --> wall.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
 
     if (!hTexGrass) {
-        MessageBoxW(NULL, L"Текстуры не загрузились!  --> grass.bmp", L"Ошибка", MB_ICONERROR);
+        MessageBoxW(NULL, L"The textures didn’t load! --> grass.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
 
     if (!hTexSpider) {
-        MessageBoxW(NULL, L"Спрайт паука не загружен!", L"Ошибка", MB_ICONERROR);
+        MessageBoxW(NULL, L"The textures didn’t load! --> spider.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
 }
+
+// ENTITY SPAWN ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+uint32_t CreateEntity() {
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id]) {
+            active[id] = true;
+            return id; // free id return
+        }
+    }
+    return -1; 
+}
+
+uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitBoxW, float HitBoxH, float offsetX = 0, float offsetY = 0) {
+    uint32_t id = CreateEntity();
+
+    hasVelocity[id] = true;
+    velocities[id] = { 0, 0 };
+
+    hasPosition[id] = true;
+    positions[id] = { x, y };
+
+    hasRenderable[id] = true;
+    renderables[id] = { w, h, hBitmap };
+
+    hasCollider[id] = true;
+    colliders[id] = { HitBoxW, HitBoxH, offsetX, offsetY };
+
+    return id; 
+}
+
+
+// GENERATION ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 void GenerateMap() {
 
@@ -183,24 +235,6 @@ void GenerateMap() {
     }
 }
 
-uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitBoxW, float HitBoxH, float offsetX = 0, float offsetY = 0) {
-    uint32_t id = CreateEntity();
-
-    hasVelocity[id] = true;
-    velocities[id] = { 0, 0 };
-
-    hasPosition[id] = true;
-    positions[id] = { x, y };
-
-    hasRenderable[id] = true;
-    renderables[id] = { w, h, hBitmap };
-
-    hasCollider[id] = true;
-    colliders[id] = { HitBoxW, HitBoxH, offsetX, offsetY };
-
-    return id; 
-}
-
 void SpawnEntityInRooms() {
 
     for (int i = 1; i < rooms.size(); i++) { 
@@ -218,7 +252,7 @@ void SpawnEntityInRooms() {
             hasAI[enemyID] = true;
             ais[enemyID] = { 1, 5.0f * 0.15f, 500.0f, 0, 0.0f, 0.0f };
             hasHealth[enemyID] = true;
-            healths[enemyID] = { 30.0f, 30.0f }; // У паука 30 HP
+            healths[enemyID] = { 30.0f, 30.0f }; 
         }
     }
 }
@@ -232,20 +266,12 @@ void EntityInit() {
     hasHealth[HeroID] = true;
     healths[HeroID] = { 100.0f, 100.0f }; 
     hasWeapon[HeroID] = true;
-    weapons[HeroID] = { 20.0f, 30.0f, 0.0f }; // Урон 20, кулдаун 30 кадров (0.5 сек), таймер 0
+    weapons[HeroID] = { 20.0f, 30.0f, 0.0f }; 
 
     SpawnEntityInRooms();
-}
+} 
 
-
-void InitGame() {
-
-    srand(time(nullptr));
-    LoadBMP();
-    GenerateMap();
-    EntityInit();
-
-}
+// RENDERING ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
@@ -265,77 +291,6 @@ void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
     SelectObject(memDC, hOldBitmap);
     DeleteDC(memDC);
 
-}
-
-void UpdateCamera() {
-    if (!hasPosition[HeroID]) return;
-
-    const float viewW = window.width / ZOOM;
-    const float viewH = window.height / ZOOM;
-
-    camera.targetX = positions[HeroID].x - viewW / 2.0f;
-    camera.targetY = positions[HeroID].y - viewH / 2.0f;
-
-    camera.x += (camera.targetX - camera.x) * camera.smooth;
-    camera.y += (camera.targetY - camera.y) * camera.smooth;
-
-    // clamp
-    const float MAP_H_px = MAP_H * TILE;
-    const float MAP_W_px = MAP_W * TILE;
-
-    if (camera.x < 0) camera.x = 0;
-    if (camera.y < 0) camera.y = 0;
-    if (camera.x > MAP_W_px - viewW) camera.x = MAP_W_px - viewW;
-    if (camera.y > MAP_H_px - viewH) camera.y = MAP_H_px - viewH;
-}
-
-void ShowMap() {
-
-    RECT fullRect = { 0, 0, window.width, window.height };
-    HBRUSH bgBrush = CreateSolidBrush(RGB(20, 20, 20));
-    FillRect(window.mem_dc, &fullRect, bgBrush);
-    DeleteObject(bgBrush);
-
-    float viewW = (float)window.width / ZOOM;
-    float viewH = (float)window.height / ZOOM;
-
-    int startCol = max(0, (int)(camera.x / TILE));
-    int endCol = min(MAP_W, (int)((camera.x + viewW) / TILE) + 1);
-    int startRow = max(0, (int)(camera.y / TILE));
-    int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
-
-    int size = (int)TILE * ZOOM; 
-
-    for (int ty = startRow; ty < endRow; ++ty) {
-        for (int tx = startCol; tx < endCol; ++tx) {
-
-            int sx = ScreenX(tx * TILE);
-            int sy = ScreenY(ty * TILE);
-
-            HBITMAP tex = (map[ty][tx] == 1) ? hTexWall : hTexGrass;
-
-            ShowSprite(sx, sy, size, size, tex, false);
-        }
-    }
-}
-
-void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color) {
-
-    if (!showGrid) return;
-    int sx = ScreenX(worldX);
-    int sy = ScreenY(worldY);
-    int sw = (int)(w * ZOOM);
-    int sh = (int)(h * ZOOM);
-
-    HPEN pen = CreatePen(PS_SOLID, 2, color);
-    HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
-    HBRUSH oldBrush = (HBRUSH)SelectObject(window.mem_dc, GetStockObject(NULL_BRUSH));
-
-    Rectangle(window.mem_dc, sx, sy, sx + sw, sy + sh);
-
-    SelectObject(window.mem_dc, oldPen);
-    SelectObject(window.mem_dc, oldBrush);
-    DeleteObject(pen);
 }
 
 void DrawGrid() {
@@ -372,58 +327,91 @@ void DrawGrid() {
 
 }
 
+void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color) {
+
+    if (!showGrid) return;
+    int sx = ScreenX(worldX);
+    int sy = ScreenY(worldY);
+    int sw = (int)(w * ZOOM);
+    int sh = (int)(h * ZOOM);
+
+    HPEN pen = CreatePen(PS_SOLID, 2, color);
+    HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
+    HBRUSH oldBrush = (HBRUSH)SelectObject(window.mem_dc, GetStockObject(NULL_BRUSH));
+
+    Rectangle(window.mem_dc, sx, sy, sx + sw, sy + sh);
+
+    SelectObject(window.mem_dc, oldPen);
+    SelectObject(window.mem_dc, oldBrush);
+    DeleteObject(pen);
+}
+
+void ShowMap() {
+
+    RECT fullRect = { 0, 0, window.width, window.height };
+    HBRUSH bgBrush = CreateSolidBrush(RGB(20, 20, 20));
+    FillRect(window.mem_dc, &fullRect, bgBrush);
+    DeleteObject(bgBrush);
+
+    float viewW = (float)window.width / ZOOM;
+    float viewH = (float)window.height / ZOOM;
+
+    int startCol = max(0, (int)(camera.x / TILE));
+    int endCol = min(MAP_W, (int)((camera.x + viewW) / TILE) + 1);
+    int startRow = max(0, (int)(camera.y / TILE));
+    int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
+
+    int size = (int)TILE * ZOOM; 
+
+    for (int ty = startRow; ty < endRow; ++ty) {
+        for (int tx = startCol; tx < endCol; ++tx) {
+
+            int sx = ScreenX(tx * TILE);
+            int sy = ScreenY(ty * TILE);
+
+            HBITMAP tex = (map[ty][tx] == 1) ? hTexWall : hTexGrass;
+
+            ShowSprite(sx, sy, size, size, tex, false);
+        }
+    }
+}
+
+void DrawEntity(uint32_t id) {
+    if (!active[id] || !hasPosition[id] || !hasRenderable[id]) return;
+
+    float x = positions[id].x;
+    float y = positions[id].y;
+    int w = renderables[id].w;
+    int h = renderables[id].h;
+    HBITMAP bmp = renderables[id].bmp;
+
+    int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
+    int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
+    ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
+
+    if (showGrid && hasCollider[id]) {
+        float hw = colliders[id].w;
+        float hh = colliders[id].h;
+        float hx = x + colliders[id].offsetX - hw / 2.0f;
+        float hy = y + colliders[id].offsetY - hh / 2.0f;
+        DrawDebugHitbox(hx, hy, hw, hh, RGB(255, 0, 0));
+    }
+}
+
 void SystemRender() {
     ShowMap();
     DrawGrid();
 
+    // Draw all except hero
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-        if (!active[id]) continue;
-        if (!hasPosition[id] || !hasRenderable[id]) continue;
         if (id == HeroID) continue;
-
-        float x = positions[id].x;
-        float y = positions[id].y;
-        int w = renderables[id].w;
-        int h = renderables[id].h;
-        HBITMAP bmp = renderables[id].bmp;
-
-        int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
-        int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
-        ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
-
-        if (showGrid && hasCollider[id]) {
-            float hw = colliders[id].w;
-            float hh = colliders[id].h;
-            float hx = x + colliders[id].offsetX - hw / 2.0f;
-            float hy = y + colliders[id].offsetY - hh / 2.0f;
-            DrawDebugHitbox(hx, hy, hw, hh, RGB(255, 0, 0));
-        }
-
-        
+        DrawEntity(id);
     }
 
-    if (active[HeroID] && hasPosition[HeroID] && hasRenderable[HeroID]) {
+    // Draw hero on top
+    DrawEntity(HeroID);
 
-        float x = positions[HeroID].x;
-        float y = positions[HeroID].y;
-        int w = renderables[HeroID].w;
-        int h = renderables[HeroID].h;
-        HBITMAP bmp = renderables[HeroID].bmp;
-
-        int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
-        int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
-        ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
-
-        if (showGrid && hasCollider[HeroID]) {
-            float hw = colliders[HeroID].w;
-            float hh = colliders[HeroID].h;
-            float hx = x + colliders[HeroID].offsetX - hw / 2.0f;
-            float hy = y + colliders[HeroID].offsetY - hh / 2.0f;
-            DrawDebugHitbox(hx, hy, hw, hh, RGB(255, 0, 0));
-        }
-
-    }
-
+    // HUD
     wchar_t buf[64];
     swprintf_s(buf, L"HP: %.0f", healths[HeroID].hp);
     SetTextColor(window.mem_dc, RGB(255, 255, 255));
@@ -445,65 +433,29 @@ void ShowGame() {
     DeleteDC(window.mem_dc);
 }
 
-bool IsWallAt(float worldX, float worldY) {
+void UpdateCamera() {
+    if (!hasPosition[HeroID]) return;
 
-    int tx = (int)(worldX / TILE);
-    int ty = (int)(worldY / TILE);
-    
-    if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return true;
-    
-    return map[ty][tx] == 1; 
+    const float viewW = window.width / ZOOM;
+    const float viewH = window.height / ZOOM;
 
+    camera.targetX = positions[HeroID].x - viewW / 2.0f;
+    camera.targetY = positions[HeroID].y - viewH / 2.0f;
+
+    camera.x += (camera.targetX - camera.x) * camera.smooth;
+    camera.y += (camera.targetY - camera.y) * camera.smooth;
+
+    // clamp
+    const float MAP_H_px = MAP_H * TILE;
+    const float MAP_W_px = MAP_W * TILE;
+
+    if (camera.x < 0) camera.x = 0;
+    if (camera.y < 0) camera.y = 0;
+    if (camera.x > MAP_W_px - viewW) camera.x = MAP_W_px - viewW;
+    if (camera.y > MAP_H_px - viewH) camera.y = MAP_H_px - viewH;
 }
 
-void SystemMovement() {
-
-    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-        if (!active[id]) continue;
-        if (!hasPosition[id] || !hasVelocity[id]) continue;
-
-        float dx = velocities[id].dx;
-        float dy = velocities[id].dy;
-
-        if (dx == 0 && dy == 0) continue;
-
-        float newX = positions[id].x + dx;
-        float newY = positions[id].y + dy;
-
-        if (hasCollider[id]) {
-            float hw = colliders[id].w / 2.0f;
-            float hh = colliders[id].h / 2.0f;
-            float cx = positions[id].x + colliders[id].offsetX; // Центр хитбокса X
-            float cy = positions[id].y + colliders[id].offsetY; // Центр хитбокса Y
-
-            // Проверка по X
-            float newCx = newX + colliders[id].offsetX;
-            float newHx = newCx - hw;
-            float hy = cy - hh;
-            if (!IsWallAt(newHx, hy) &&
-                !IsWallAt(newHx + colliders[id].w, hy) &&
-                !IsWallAt(newHx, hy + colliders[id].h) &&
-                !IsWallAt(newHx + colliders[id].w, hy + colliders[id].h)) {
-                positions[id].x = newX;
-            }
-
-            // Проверка по Y
-            float hx = positions[id].x + colliders[id].offsetX - hw;
-            float newCy = newY + colliders[id].offsetY;
-            float newHy = newCy - hh;
-            if (!IsWallAt(hx, newHy) &&
-                !IsWallAt(hx + colliders[id].w, newHy) &&
-                !IsWallAt(hx, newHy + colliders[id].h) &&
-                !IsWallAt(hx + colliders[id].w, newHy + colliders[id].h)) {
-                positions[id].y = newY;
-            }
-        }
-        else {
-            positions[id].x = newX;
-            positions[id].y = newY;
-        }
-    }
-}
+// INPUT ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 void SystemInput() {
 
@@ -534,21 +486,53 @@ void SystemInput() {
 
 }
 
-bool IsWallBetween(float x1, float y1, float x2, float y2) {
-    float dx = x2 - x1;
-    float dy = y2 - y1;
-    float dist = sqrt(dx * dx + dy * dy);
-    if (dist < 1.0f) return false;
+// GAME SYSTEMS ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+void SystemMovement() {
 
-    int steps = (int)(dist / 20.0f);
-    for (int i = 0; i <= steps; i++) {
-        float t = (float)i / steps;
-        float px = x1 + dx * t;
-        float py = y1 + dy * t;
-        if (IsWallAt(px, py)) return true;
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id]) continue;
+        if (!hasPosition[id] || !hasVelocity[id]) continue;
+
+        float dx = velocities[id].dx;
+        float dy = velocities[id].dy;
+
+        if (dx == 0 && dy == 0) continue;
+
+        float newX = positions[id].x + dx;
+        float newY = positions[id].y + dy;
+
+        if (hasCollider[id]) {
+            float hw = colliders[id].w / 2.0f;
+            float hh = colliders[id].h / 2.0f;
+            float cx = positions[id].x + colliders[id].offsetX; 
+            float cy = positions[id].y + colliders[id].offsetY; 
+
+            float newCx = newX + colliders[id].offsetX;
+            float newHx = newCx - hw;
+            float hy = cy - hh;
+            if (!IsWallAt(newHx, hy) &&
+                !IsWallAt(newHx + colliders[id].w, hy) &&
+                !IsWallAt(newHx, hy + colliders[id].h) &&
+                !IsWallAt(newHx + colliders[id].w, hy + colliders[id].h)) {
+                positions[id].x = newX;
+            }
+
+            float hx = positions[id].x + colliders[id].offsetX - hw;
+            float newCy = newY + colliders[id].offsetY;
+            float newHy = newCy - hh;
+            if (!IsWallAt(hx, newHy) &&
+                !IsWallAt(hx + colliders[id].w, newHy) &&
+                !IsWallAt(hx, newHy + colliders[id].h) &&
+                !IsWallAt(hx + colliders[id].w, newHy + colliders[id].h)) {
+                positions[id].y = newY;
+            }
+        }
+        else {
+            positions[id].x = newX;
+            positions[id].y = newY;
+        }
     }
-    return false;
-}
+}   
 
 void SystemAI() {
     if (!hasPosition[HeroID]) return;
@@ -592,15 +576,12 @@ void SystemAI() {
 }
 
 void SystemCombat() {
-
-
-    // 1. Бьём врагов
     if (hasWeapon[HeroID] && hasPosition[HeroID]) {
         weapons[HeroID].timer -= 1.0f;
 
         if (mouseLeftDown && weapons[HeroID].timer <= 0) {
             weapons[HeroID].timer = weapons[HeroID].cooldown;
-            mouseLeftDown = false; // <-- Сбрасываем, чтобы один клик = один удар
+            mouseLeftDown = false; 
 
             for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
                 if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
@@ -617,13 +598,11 @@ void SystemCombat() {
         }
     }
 
-    // Враги кусают героя
     if (hasHealth[HeroID] && hasPosition[HeroID]) {
         for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
             if (!active[id] || !hasAI[id] || !hasHealth[id] || !hasPosition[id]) continue;
             if (id == HeroID) continue;
 
-            // Уменьшаем таймер атаки
             ais[id].attackTimer -= 1.0f;
 
             float heroHalfW = colliders[HeroID].w / 2.0f;
@@ -644,7 +623,7 @@ void SystemCombat() {
             float dy = positions[id].y - positions[HeroID].y;
             float dist = sqrt(dx * dx + dy * dy);
 
-            if (overlapX && overlapY) { // Хитбоксы пересеклись
+            if (overlapX && overlapY) {
                 if (ais[id].attackTimer <= 0) {
                     healths[HeroID].hp -= 5.0f;
                     ais[id].attackTimer = 30.0f;
@@ -658,8 +637,7 @@ void SystemDeath() {
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) continue;
         if (hasHealth[id] && healths[id].hp <= 0) {
-            active[id] = false; // Удаляем сущность
-            // Сброс флагов, чтобы не мусорить
+            active[id] = false; 
             hasPosition[id] = false;
             hasVelocity[id] = false;
             hasRenderable[id] = false;
@@ -669,6 +647,17 @@ void SystemDeath() {
             hasWeapon[id] = false;
         }
     }
+}
+
+// GAMELOOP ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+void InitGame() {
+
+    srand(time(nullptr));
+    LoadBMP();
+    GenerateMap();
+    EntityInit();
+
 }
 
 void ProcessGame() {
@@ -681,7 +670,6 @@ void ProcessGame() {
 }
 
 void ClearGame() {
-
     DeleteObject(hTexHero);
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
@@ -708,7 +696,7 @@ int APIENTRY wWinMain(
     wc.lpszClassName = CLASS_NAME;  
 
     if (!RegisterClassEx(&wc)) { 
-        MessageBox(NULL, L"Ошибка регистрации класса окна!", L"Ошибка", MB_ICONERROR);
+        MessageBox(NULL, L"Window class registration error!", L"Error:Window", MB_ICONERROR);
         return 0;
     }
 
@@ -726,26 +714,22 @@ int APIENTRY wWinMain(
     );
 
     if (!window.hwnd) {
-
         MessageBox(
             NULL, 
-            L"Ошибка создания окна!", 
-            L"Ошибка", 
+            L"Error creating window!", 
+            L"Error:Window", 
             MB_ICONERROR 
         );
         return 0;  
-
     }
 
     InitWindow();
-
     ShowWindow(window.hwnd, SW_SHOW);
     UpdateWindow(window.hwnd);
 
     MSG msg = {}; 
 
     while (GetMessage(&msg, NULL, 0, 0)) {
-
         TranslateMessage(&msg); 
         DispatchMessage(&msg); 
 
@@ -753,7 +737,6 @@ int APIENTRY wWinMain(
 }
 
 LRESULT CALLBACK WndProc(
-
     HWND hwnd, 
     UINT msg, 
     WPARAM wParam, 
@@ -764,7 +747,6 @@ LRESULT CALLBACK WndProc(
     switch (msg) {
 
     case WM_CREATE:
-
         InitGame();
         ShowCursor(FALSE); 
         SetTimer(hwnd, 1, 16, NULL);
@@ -791,7 +773,6 @@ LRESULT CALLBACK WndProc(
         break;
 
     case WM_KEYDOWN: 
-
         keys[wParam] = true;
         InvalidateRect(hwnd, NULL, TRUE);
 
@@ -822,12 +803,10 @@ LRESULT CALLBACK WndProc(
         break;
 
     case WM_DESTROY: 
-
         ClearGame();
         KillTimer(hwnd, 1);
         PostQuitMessage(0);
         break;
-
 
     default: 
         return DefWindowProc(hwnd, msg, wParam, lParam);

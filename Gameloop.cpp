@@ -108,8 +108,12 @@ HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
 HBITMAP hTexHero = NULL;
 HBITMAP hTexSpider = NULL;
+
 HBITMAP hTexHeroRightIdle = NULL;
 HBITMAP hTexHeroRightWalk[8] = { NULL }; // Массив из 8 кадров
+
+HBITMAP hTexHeroLeftIdle = NULL;
+HBITMAP hTexHeroLeftWalk[8] = { NULL };
 
 vector<Room> rooms;
 
@@ -189,10 +193,28 @@ void LoadBMP() {
     hTexHeroRightWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+    hTexHeroLeftIdle = (HBITMAP)LoadImageW(NULL, L"hero_left_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroLeftWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftWalk[2] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftWalk[3] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
     for (int i = 0; i < 7; i++) {
         if (!hTexHeroRightWalk[i]) {
             wchar_t msg[64];
             swprintf_s(msg, L"Failed to load right walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
+
+    for (int i = 0; i < 7; i++) {
+        if (!hTexHeroLeftWalk[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load left walk %d", i + 1);
             MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
         }
     }
@@ -598,7 +620,19 @@ void SystemInput() {
             animations[HeroID].frameTimer = 0.0f;
 
             // Настраиваем кадры в зависимости от направления и состояния
-            if (directions[HeroID].facing == 3) { // Right
+            if (directions[HeroID].facing == 2) { // Left
+                if (targetState == 1) { // Walk
+                    animations[HeroID].frameCount = 7;
+                    for (int i = 0; i < 7; i++) {
+                        animations[HeroID].frames[i] = hTexHeroLeftWalk[i];
+                    }
+                }
+                else { // Idle
+                    animations[HeroID].frameCount = 1;
+                    animations[HeroID].frames[0] = hTexHeroLeftIdle;
+                }
+            } 
+            else if (directions[HeroID].facing == 3) { // Right
                 if (targetState == 1) { // Walk
                     animations[HeroID].frameCount = 7;
                     for (int i = 0; i < 7; i++) {
@@ -827,10 +861,17 @@ void ClearGame() {
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
     DeleteObject(hTexSpider);
+
     DeleteObject(hTexHeroRightIdle);
     for (int i = 0; i < 7; i++) {
         if (hTexHeroRightWalk[i]) DeleteObject(hTexHeroRightWalk[i]);
     }
+
+    DeleteObject(hTexHeroLeftIdle);
+    for (int i = 0; i < 7; i++) {
+        if (hTexHeroLeftWalk[i]) DeleteObject(hTexHeroLeftWalk[i]);
+    }
+
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 

@@ -250,12 +250,12 @@ void LoadBMP() {
     hTexHeroLeftAttack[0] = (HBITMAP)LoadImageW(NULL, L"left_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftAttack[1] = (HBITMAP)LoadImageW(NULL, L"left_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftAttack[2] = (HBITMAP)LoadImageW(NULL, L"left_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexHeroLeftAttack[3] = (HBITMAP)LoadImageW(NULL, L"left_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftAttack[3] = (HBITMAP)LoadImageW(NULL, L"testAttackLeft.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     hTexHeroRightAttack[0] = (HBITMAP)LoadImageW(NULL, L"right_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightAttack[1] = (HBITMAP)LoadImageW(NULL, L"right_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightAttack[2] = (HBITMAP)LoadImageW(NULL, L"right_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexHeroRightAttack[3] = (HBITMAP)LoadImageW(NULL, L"right_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightAttack[3] = (HBITMAP)LoadImageW(NULL, L"testAttackRight.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     for (int i = 0; i < 7; i++) {
         if (!hTexHeroDownWalk[i]) {
@@ -669,80 +669,86 @@ void SystemInput() {
 
     // --- ANIMATION ---
     if (hasAnimation[HeroID]) {
-        bool isMoving = (dx != 0 || dy != 0);
-        int targetState = isMoving ? 1 : 0;
-
-        // Запоминаем старое направление
-        int oldFacing = directions[HeroID].facing;
-
-        // Определяем новое направление
-        if (isMoving) {
-            if (abs(dx) > abs(dy)) {
-                directions[HeroID].facing = (dx < 0) ? 2 : 3; // Left : Right
-            }
-            else {
-                directions[HeroID].facing = (dy < 0) ? 1 : 0; // Up : Down
-            }
+        if (animations[HeroID].state == 2) {
+        
         }
+        else {
 
-        if (animations[HeroID].state != targetState || oldFacing != directions[HeroID].facing) {
-            animations[HeroID].state = targetState;
-            animations[HeroID].currentFrame = 0;
-            animations[HeroID].frameTimer = 0.0f;
+            bool isMoving = (dx != 0 || dy != 0);
+            int targetState = isMoving ? 1 : 0;
 
-            // Настраиваем кадры в зависимости от направления и состояния
-            if (directions[HeroID].facing == 1) { // up
-                if (targetState == 1) { // Walk
-                    animations[HeroID].frameCount = 7;
-                    for (int i = 0; i < 7; i++) {
-                        animations[HeroID].frames[i] = hTexHeroUpWalk[i];
-                    }
+            // Запоминаем старое направление
+            int oldFacing = directions[HeroID].facing;
+
+            // Определяем новое направление
+            if (isMoving) {
+                if (abs(dx) > abs(dy)) {
+                    directions[HeroID].facing = (dx < 0) ? 2 : 3; // Left : Right
                 }
-                else { // Idle
-                    animations[HeroID].frameCount = 1;
-                    animations[HeroID].frames[0] = hTexHeroUpIdle;
-                }
-            }
-            else if (directions[HeroID].facing == 2) { // Left
-                if (targetState == 1) { // Walk
-                    animations[HeroID].frameCount = 7;
-                    for (int i = 0; i < 7; i++) {
-                        animations[HeroID].frames[i] = hTexHeroLeftWalk[i];
-                    }
-                }
-                else { // Idle
-                    animations[HeroID].frameCount = 1;
-                    animations[HeroID].frames[0] = hTexHeroLeftIdle;
-                }
-            } 
-            else if (directions[HeroID].facing == 3) { // Right
-                if (targetState == 1) { // Walk
-                    animations[HeroID].frameCount = 7;
-                    for (int i = 0; i < 7; i++) {
-                        animations[HeroID].frames[i] = hTexHeroRightWalk[i];
-                    }
-                }
-                else { // Idle
-                    animations[HeroID].frameCount = 1;
-                    animations[HeroID].frames[0] = hTexHeroRightIdle; // Твой idle для right
+                else {
+                    directions[HeroID].facing = (dy < 0) ? 1 : 0; // Up : Down
                 }
             }
-            else if (directions[HeroID].facing == 0) { // down
-                if (targetState == 1) { // Walk
-                    animations[HeroID].frameCount = 7;
-                    for (int i = 0; i < 7; i++) {
-                        animations[HeroID].frames[i] = hTexHeroDownWalk[i];
+
+            if (animations[HeroID].state != targetState || oldFacing != directions[HeroID].facing) {
+                animations[HeroID].state = targetState;
+                animations[HeroID].currentFrame = 0;
+                animations[HeroID].frameTimer = 0.0f;
+
+                // Настраиваем кадры в зависимости от направления и состояния
+                if (directions[HeroID].facing == 1) { // up
+                    if (targetState == 1) { // Walk
+                        animations[HeroID].frameCount = 7;
+                        for (int i = 0; i < 7; i++) {
+                            animations[HeroID].frames[i] = hTexHeroUpWalk[i];
+                        }
+                    }
+                    else { // Idle
+                        animations[HeroID].frameCount = 1;
+                        animations[HeroID].frames[0] = hTexHeroUpIdle;
                     }
                 }
-                else { // Idle
-                    animations[HeroID].frameCount = 1;
-                    animations[HeroID].frames[0] = hTexHeroDownIdle; // Твой idle для right
+                else if (directions[HeroID].facing == 2) { // Left
+                    if (targetState == 1) { // Walk
+                        animations[HeroID].frameCount = 7;
+                        for (int i = 0; i < 7; i++) {
+                            animations[HeroID].frames[i] = hTexHeroLeftWalk[i];
+                        }
+                    }
+                    else { // Idle
+                        animations[HeroID].frameCount = 1;
+                        animations[HeroID].frames[0] = hTexHeroLeftIdle;
+                    }
                 }
-            }
-            else {
-                // Остальные направления пока используют дефолтный спрайт
-                animations[HeroID].frameCount = 1;
-                animations[HeroID].frames[0] = hTexHero;
+                else if (directions[HeroID].facing == 3) { // Right
+                    if (targetState == 1) { // Walk
+                        animations[HeroID].frameCount = 7;
+                        for (int i = 0; i < 7; i++) {
+                            animations[HeroID].frames[i] = hTexHeroRightWalk[i];
+                        }
+                    }
+                    else { // Idle
+                        animations[HeroID].frameCount = 1;
+                        animations[HeroID].frames[0] = hTexHeroRightIdle; // Твой idle для right
+                    }
+                }
+                else if (directions[HeroID].facing == 0) { // down
+                    if (targetState == 1) { // Walk
+                        animations[HeroID].frameCount = 7;
+                        for (int i = 0; i < 7; i++) {
+                            animations[HeroID].frames[i] = hTexHeroDownWalk[i];
+                        }
+                    }
+                    else { // Idle
+                        animations[HeroID].frameCount = 1;
+                        animations[HeroID].frames[0] = hTexHeroDownIdle; // Твой idle для right
+                    }
+                }
+                else {
+                    // Остальные направления пока используют дефолтный спрайт
+                    animations[HeroID].frameCount = 1;
+                    animations[HeroID].frames[0] = hTexHero;
+                }
             }
         }
     }
@@ -849,12 +855,39 @@ void SystemAI() {
 }
 
 void SystemCombat() {
-    if (hasWeapon[HeroID] && hasPosition[HeroID]) {
+    if (hasWeapon[HeroID] && hasPosition[HeroID] && hasAnimation[HeroID]) {
         weapons[HeroID].timer -= 1.0f;
 
-        if (mouseLeftDown && weapons[HeroID].timer <= 0) {
+        if (mouseLeftDown && weapons[HeroID].timer <= 0 && animations[HeroID].state != 2) {
             weapons[HeroID].timer = weapons[HeroID].cooldown;
-            mouseLeftDown = false; 
+            mouseLeftDown = false;
+
+            // 1. Переключаем анимацию в состояние атаки
+            animations[HeroID].state = 2; // attack
+            animations[HeroID].currentFrame = 0;
+            animations[HeroID].frameTimer = 0.0f;
+            animations[HeroID].frameDuration = 6.0f; // Скорость атаки
+
+            // 2. Загружаем кадры атаки для текущего направления
+            int facing = directions[HeroID].facing;
+            int frameCount = 4; // Сколько кадров атаки у тебя нарисовано (поменяй на 3, если 3)
+
+            if (facing == 0) { // Down
+                animations[HeroID].frameCount = frameCount;
+                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroDownAttack[i];
+            }
+            else if (facing == 1) { // Up
+                animations[HeroID].frameCount = frameCount;
+                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroUpAttack[i];
+            }
+            else if (facing == 2) { // Left
+                animations[HeroID].frameCount = frameCount;
+                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroLeftAttack[i];
+            }
+            else if (facing == 3) { // Right
+                animations[HeroID].frameCount = frameCount;
+                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroRightAttack[i];
+            }
 
             for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
                 if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
@@ -920,12 +953,31 @@ void SystemAnimation() {
         if (!active[id] || !hasAnimation[id]) continue;
         Animation& anim = animations[id];
 
-        if (anim.frameCount <= 1) continue; // Если 1 кадр — нечего менять
+        if (anim.frameCount <= 1) continue;
 
         anim.frameTimer += 1.0f;
         if (anim.frameTimer >= anim.frameDuration) {
             anim.frameTimer = 0.0f;
-            anim.currentFrame = (anim.currentFrame + 1) % anim.frameCount;
+            anim.currentFrame++;
+
+            // Если анимация атаки закончилась — возвращаемся в idle
+            if (anim.state == 2 && anim.currentFrame >= anim.frameCount) {
+                anim.state = 0;
+                anim.currentFrame = 0;
+                anim.frameCount = 1;
+                anim.frameTimer = 0.0f;
+
+                // Принудительно ставим idle-кадр для текущего направления
+                int facing = directions[id].facing;
+                if (facing == 0) anim.frames[0] = hTexHeroDownIdle;
+                else if (facing == 1) anim.frames[0] = hTexHeroUpIdle;
+                else if (facing == 2) anim.frames[0] = hTexHeroLeftIdle;
+                else if (facing == 3) anim.frames[0] = hTexHeroRightIdle;
+            }
+            else if (anim.state != 2) {
+                // Обычная цикличная анимация (walk)
+                anim.currentFrame = anim.currentFrame % anim.frameCount;
+            }
         }
     }
 }

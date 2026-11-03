@@ -118,6 +118,10 @@ HBITMAP hTexHeroLeftWalk[8] = { NULL };
 HBITMAP hTexHeroUpIdle = NULL;
 HBITMAP hTexHeroUpWalk[8] = { NULL };
 
+HBITMAP hTexHeroDownIdle = NULL;
+HBITMAP hTexHeroDownWalk[8] = { NULL };
+
+
 vector<Room> rooms;
 
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
@@ -206,7 +210,7 @@ void LoadBMP() {
     hTexHeroLeftWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
-    hTexHeroUpIdle = (HBITMAP)LoadImageW(NULL, L"hero_Up_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpIdle = (HBITMAP)LoadImageW(NULL, L"hero_up_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     hTexHeroUpWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroUpWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -215,6 +219,24 @@ void LoadBMP() {
     hTexHeroUpWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroUpWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroUpWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroDownIdle = (HBITMAP)LoadImageW(NULL, L"hero_down_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroDownWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownWalk[2] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownWalk[3] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    for (int i = 0; i < 7; i++) {
+        if (!hTexHeroDownWalk[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load up walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
 
     for (int i = 0; i < 7; i++) {
         if (!hTexHeroUpWalk[i]) {
@@ -621,8 +643,12 @@ void SystemInput() {
     // --- ANIMATION ---
     if (hasAnimation[HeroID]) {
         bool isMoving = (dx != 0 || dy != 0);
+        int targetState = isMoving ? 1 : 0;
 
-        // 1. Определяем направление
+        // Запоминаем старое направление
+        int oldFacing = directions[HeroID].facing;
+
+        // Определяем новое направление
         if (isMoving) {
             if (abs(dx) > abs(dy)) {
                 directions[HeroID].facing = (dx < 0) ? 2 : 3; // Left : Right
@@ -632,10 +658,7 @@ void SystemInput() {
             }
         }
 
-        // 2. Переключаем состояние (idle <-> walk)
-        int targetState = isMoving ? 1 : 0; // 1 = walk, 0 = idle
-
-        if (animations[HeroID].state != targetState) {
+        if (animations[HeroID].state != targetState || oldFacing != directions[HeroID].facing) {
             animations[HeroID].state = targetState;
             animations[HeroID].currentFrame = 0;
             animations[HeroID].frameTimer = 0.0f;
@@ -675,6 +698,18 @@ void SystemInput() {
                 else { // Idle
                     animations[HeroID].frameCount = 1;
                     animations[HeroID].frames[0] = hTexHeroRightIdle; // Твой idle для right
+                }
+            }
+            else if (directions[HeroID].facing == 0) { // down
+                if (targetState == 1) { // Walk
+                    animations[HeroID].frameCount = 7;
+                    for (int i = 0; i < 7; i++) {
+                        animations[HeroID].frames[i] = hTexHeroDownWalk[i];
+                    }
+                }
+                else { // Idle
+                    animations[HeroID].frameCount = 1;
+                    animations[HeroID].frames[0] = hTexHeroDownIdle; // Твой idle для right
                 }
             }
             else {
@@ -908,6 +943,11 @@ void ClearGame() {
     DeleteObject(hTexHeroUpIdle);
     for (int i = 0; i < 7; i++) {
         if (hTexHeroUpWalk[i]) DeleteObject(hTexHeroUpWalk[i]);
+    }
+
+    DeleteObject(hTexHeroDownIdle);
+    for (int i = 0; i < 7; i++) {
+        if (hTexHeroDownWalk[i]) DeleteObject(hTexHeroDownWalk[i]);
     }
 
 }

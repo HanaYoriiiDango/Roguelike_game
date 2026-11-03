@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cmath>
 #pragma comment(lib, "Msimg32.lib")
+#pragma comment(lib, "Winmm.lib")
 
 using namespace std;
 
@@ -862,6 +863,8 @@ void SystemCombat() {
             weapons[HeroID].timer = weapons[HeroID].cooldown;
             mouseLeftDown = false;
 
+            PlaySoundW(L"whip.wav", NULL, SND_FILENAME | SND_ASYNC);
+
             // 1. Переключаем анимацию в состояние атаки
             animations[HeroID].state = 2; // attack
             animations[HeroID].currentFrame = 0;
@@ -994,6 +997,10 @@ void InitGame() {
 }
 
 void ProcessGame() {
+    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    
+    // darkritualmix.mp3
     SystemInput();
     SystemAI();
     SystemMovement();
@@ -1167,7 +1174,7 @@ LRESULT CALLBACK WndProc(
     case WM_LBUTTONDOWN:
         mouseLeftDown = true;
         break;
-
+        
     case WM_LBUTTONUP:
         mouseLeftDown = false;
         break;

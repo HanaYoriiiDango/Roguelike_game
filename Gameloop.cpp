@@ -104,13 +104,15 @@ bool keys[256] = {};
 
 bool showGrid = false;
 bool mouseLeftDown = false;
+
+// animations sprites
 HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
 HBITMAP hTexHero = NULL;
 HBITMAP hTexSpider = NULL;
 
 HBITMAP hTexHeroRightIdle = NULL;
-HBITMAP hTexHeroRightWalk[8] = { NULL }; // Массив из 8 кадров
+HBITMAP hTexHeroRightWalk[8] = { NULL }; 
 
 HBITMAP hTexHeroLeftIdle = NULL;
 HBITMAP hTexHeroLeftWalk[8] = { NULL };
@@ -120,6 +122,11 @@ HBITMAP hTexHeroUpWalk[8] = { NULL };
 
 HBITMAP hTexHeroDownIdle = NULL;
 HBITMAP hTexHeroDownWalk[8] = { NULL };
+
+HBITMAP hTexHeroDownAttack[4] = { NULL };
+HBITMAP hTexHeroUpAttack[4] = { NULL };
+HBITMAP hTexHeroLeftAttack[4] = { NULL };
+HBITMAP hTexHeroRightAttack[4] = { NULL };
 
 
 vector<Room> rooms;
@@ -229,6 +236,26 @@ void LoadBMP() {
     hTexHeroDownWalk[4] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk5.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroDownWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroDownWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroDownAttack[0] = (HBITMAP)LoadImageW(NULL, L"down_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownAttack[1] = (HBITMAP)LoadImageW(NULL, L"down_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownAttack[2] = (HBITMAP)LoadImageW(NULL, L"down_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownAttack[3] = (HBITMAP)LoadImageW(NULL, L"down_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroUpAttack[0] = (HBITMAP)LoadImageW(NULL, L"up_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpAttack[1] = (HBITMAP)LoadImageW(NULL, L"up_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpAttack[2] = (HBITMAP)LoadImageW(NULL, L"up_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpAttack[3] = (HBITMAP)LoadImageW(NULL, L"up_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroLeftAttack[0] = (HBITMAP)LoadImageW(NULL, L"left_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftAttack[1] = (HBITMAP)LoadImageW(NULL, L"left_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftAttack[2] = (HBITMAP)LoadImageW(NULL, L"left_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftAttack[3] = (HBITMAP)LoadImageW(NULL, L"left_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+    hTexHeroRightAttack[0] = (HBITMAP)LoadImageW(NULL, L"right_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightAttack[1] = (HBITMAP)LoadImageW(NULL, L"right_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightAttack[2] = (HBITMAP)LoadImageW(NULL, L"right_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightAttack[3] = (HBITMAP)LoadImageW(NULL, L"right_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     for (int i = 0; i < 7; i++) {
         if (!hTexHeroDownWalk[i]) {
@@ -948,6 +975,22 @@ void ClearGame() {
     DeleteObject(hTexHeroDownIdle);
     for (int i = 0; i < 7; i++) {
         if (hTexHeroDownWalk[i]) DeleteObject(hTexHeroDownWalk[i]);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (hTexHeroDownAttack[i]) DeleteObject(hTexHeroDownAttack[i]);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (hTexHeroUpAttack[i]) DeleteObject(hTexHeroUpAttack[i]);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (hTexHeroLeftAttack[i]) DeleteObject(hTexHeroLeftAttack[i]);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        if (hTexHeroRightAttack[i]) DeleteObject(hTexHeroRightAttack[i]);
     }
 
 }

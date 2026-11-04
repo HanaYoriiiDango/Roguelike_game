@@ -952,84 +952,101 @@ void SystemAI() {
     }
 }
 
+// 3. Нанесение урона
+void ApplyHeroDamage() {
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
+        if (id == HeroID) continue;
+
+        float dist = DistanceBetweenHitboxes(id, HeroID);
+        if (dist < HERO_ATTACK_RADIUS) {
+            healths[id].hp -= weapons[HeroID].damage;
+        }
+    }
+}
+
+// 2. Загрузка кадров атаки
+void SetHeroAttackFrames() {
+    int facing = directions[HeroID].facing;
+    int frameCount = ATTACK_FRAME_COUNT;
+
+    HBITMAP* frames = nullptr;
+    if (facing == 0) frames = hTexHeroDownAttack;
+    else if (facing == 1) frames = hTexHeroUpAttack;
+    else if (facing == 2) frames = hTexHeroLeftAttack;
+    else if (facing == 3) frames = hTexHeroRightAttack;
+
+    animations[HeroID].frameCount = frameCount;
+    for (int i = 0; i < frameCount; i++) {
+        animations[HeroID].frames[i] = frames[i];
+    }
+}
+
+// 1. Атака героя
+void HeroAttack() {
+    if (!hasWeapon[HeroID] || !hasPosition[HeroID] || !hasAnimation[HeroID]) return;
+
+    // 1. Всегда уменьшаем таймер
+    weapons[HeroID].timer -= 1.0f;
+
+    // 2. Если атака идёт — не начинаем новую
+    if (animations[HeroID].state == 2) return;
+
+    // 3. Проверяем клик и кулдаун
+    if (!mouseLeftDown || weapons[HeroID].timer > 0) return;
+
+    // 4. Запуск атаки
+    weapons[HeroID].timer = weapons[HeroID].cooldown;
+    mouseLeftDown = false;
+    PlaySoundW(L"whip.wav", NULL, SND_FILENAME | SND_ASYNC);
+
+    animations[HeroID].state = 2;
+    animations[HeroID].currentFrame = 0;
+    animations[HeroID].frameTimer = 0.0f;
+    animations[HeroID].frameDuration = 6.0f;
+
+    SetHeroAttackFrames();
+    ApplyHeroDamage();
+}
+// 5. Проверка пересечения хитбоксов (выносим отдельно)
+bool IsHitboxOverlap(uint32_t a, uint32_t b) {
+    if (!hasCollider[a] || !hasCollider[b]) return false;
+
+    float halfW_a = colliders[a].w / 2.0f;
+    float halfH_a = colliders[a].h / 2.0f;
+    float halfW_b = colliders[b].w / 2.0f;
+    float halfH_b = colliders[b].h / 2.0f;
+
+    float cx_a = positions[a].x + colliders[a].offsetX;
+    float cy_a = positions[a].y + colliders[a].offsetY;
+    float cx_b = positions[b].x + colliders[b].offsetX;
+    float cy_b = positions[b].y + colliders[b].offsetY;
+
+    return (abs(cx_a - cx_b) < (halfW_a + halfW_b)) &&
+        (abs(cy_a - cy_b) < (halfH_a + halfH_b));
+}
+
+// 4. Укус врагов
+void EnemyAttackHero() {
+    if (!hasHealth[HeroID] || !hasPosition[HeroID]) return;
+
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasAI[id] || !hasHealth[id] || !hasPosition[id]) continue;
+        if (id == HeroID) continue;
+
+        ais[id].attackTimer -= 1.0f;
+
+        if (IsHitboxOverlap(id, HeroID) && ais[id].attackTimer <= 0) {
+            healths[HeroID].hp -= SPIDER_DAMAGE;
+            ais[id].attackTimer = SPIDER_ATTACK_COOLDOWN;
+        }
+    }
+}
+
+// Итоговая система
 void SystemCombat() {
-    if (hasWeapon[HeroID] && hasPosition[HeroID] && hasAnimation[HeroID]) {
-        weapons[HeroID].timer -= 1.0f;
-
-        if (mouseLeftDown && weapons[HeroID].timer <= 0 && animations[HeroID].state != 2) {
-            weapons[HeroID].timer = weapons[HeroID].cooldown;
-            mouseLeftDown = false;
-
-            PlaySoundW(L"whip.wav", NULL, SND_FILENAME | SND_ASYNC);
-
-            // 1. Переключаем анимацию в состояние атаки
-            animations[HeroID].state = 2; // attack
-            animations[HeroID].currentFrame = 0;
-            animations[HeroID].frameTimer = 0.0f;
-            animations[HeroID].frameDuration = 6.0f; // Скорость атаки
-
-            // 2. Загружаем кадры атаки для текущего направления
-            int facing = directions[HeroID].facing;
-            int frameCount = ATTACK_FRAME_COUNT; // Сколько кадров атаки у тебя нарисовано (поменяй на 3, если 3)
-
-            if (facing == 0) { // Down
-                animations[HeroID].frameCount = frameCount;
-                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroDownAttack[i];
-            }
-            else if (facing == 1) { // Up
-                animations[HeroID].frameCount = frameCount;
-                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroUpAttack[i];
-            }
-            else if (facing == 2) { // Left
-                animations[HeroID].frameCount = frameCount;
-                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroLeftAttack[i];
-            }
-            else if (facing == 3) { // Right
-                animations[HeroID].frameCount = frameCount;
-                for (int i = 0; i < frameCount; i++) animations[HeroID].frames[i] = hTexHeroRightAttack[i];
-            }
-
-            for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-                if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
-                if (id == HeroID) continue;
-
-                float dist = DistanceBetweenHitboxes(id, HeroID);
-
-                if (dist < HERO_ATTACK_RADIUS) {
-                    healths[id].hp -= weapons[HeroID].damage;
-                }
-            }
-        }
-    }
-
-    if (hasHealth[HeroID] && hasPosition[HeroID]) {
-        for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-            if (!active[id] || !hasAI[id] || !hasHealth[id] || !hasPosition[id]) continue;
-            if (id == HeroID) continue;
-
-            ais[id].attackTimer -= 1.0f;
-
-            float heroHalfW = colliders[HeroID].w / 2.0f;
-            float heroHalfH = colliders[HeroID].h / 2.0f;
-            float enemyHalfW = colliders[id].w / 2.0f;
-            float enemyHalfH = colliders[id].h / 2.0f;
-
-            float heroCx = positions[HeroID].x + colliders[HeroID].offsetX;
-            float heroCy = positions[HeroID].y + colliders[HeroID].offsetY;
-            float enemyCx = positions[id].x + colliders[id].offsetX;
-            float enemyCy = positions[id].y + colliders[id].offsetY;
-
-            bool overlapX = abs(enemyCx - heroCx) < (heroHalfW + enemyHalfW);
-            bool overlapY = abs(enemyCy - heroCy) < (heroHalfH + enemyHalfH);
-
-            if (overlapX && overlapY) {
-                if (ais[id].attackTimer <= 0) {
-                    healths[HeroID].hp -= SPIDER_DAMAGE;
-                    ais[id].attackTimer = SPIDER_ATTACK_COOLDOWN;
-                }
-            }
-        }
-    }
+    HeroAttack();
+    EnemyAttackHero();
 }
 
 void SystemDeath() {
@@ -1048,37 +1065,45 @@ void SystemDeath() {
     }
 }
 
+// 2. Завершение атаки
+void EndAttack(uint32_t id) {
+    Animation& anim = animations[id];
+    anim.state = 0;
+    anim.currentFrame = 0;
+    anim.frameCount = 1;
+    anim.frameTimer = 0.0f;
+
+    int facing = directions[id].facing;
+    if (facing == 0) anim.frames[0] = hTexHeroDownIdle;
+    else if (facing == 1) anim.frames[0] = hTexHeroUpIdle;
+    else if (facing == 2) anim.frames[0] = hTexHeroLeftIdle;
+    else if (facing == 3) anim.frames[0] = hTexHeroRightIdle;
+}
+
+// 1. Обновление кадра
+void UpdateAnimationFrame(uint32_t id) {
+    Animation& anim = animations[id];
+    if (anim.frameCount <= 1) return;
+
+    anim.frameTimer += 1.0f;
+    if (anim.frameTimer < anim.frameDuration) return;
+
+    anim.frameTimer = 0.0f;
+    anim.currentFrame++;
+
+    if (anim.state == 2 && anim.currentFrame >= anim.frameCount) {
+        EndAttack(id);
+    }
+    else if (anim.state != 2) {
+        anim.currentFrame = anim.currentFrame % anim.frameCount;
+    }
+}
+
+// Итоговая система
 void SystemAnimation() {
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id] || !hasAnimation[id]) continue;
-        Animation& anim = animations[id];
-
-        if (anim.frameCount <= 1) continue;
-
-        anim.frameTimer += 1.0f;
-        if (anim.frameTimer >= anim.frameDuration) {
-            anim.frameTimer = 0.0f;
-            anim.currentFrame++;
-
-            // Если анимация атаки закончилась — возвращаемся в idle
-            if (anim.state == 2 && anim.currentFrame >= anim.frameCount) {
-                anim.state = 0;
-                anim.currentFrame = 0;
-                anim.frameCount = 1;
-                anim.frameTimer = 0.0f;
-
-                // Принудительно ставим idle-кадр для текущего направления
-                int facing = directions[id].facing;
-                if (facing == 0) anim.frames[0] = hTexHeroDownIdle;
-                else if (facing == 1) anim.frames[0] = hTexHeroUpIdle;
-                else if (facing == 2) anim.frames[0] = hTexHeroLeftIdle;
-                else if (facing == 3) anim.frames[0] = hTexHeroRightIdle;
-            }
-            else if (anim.state != 2) {
-                // Обычная цикличная анимация (walk)
-                anim.currentFrame = anim.currentFrame % anim.frameCount;
-            }
-        }
+        UpdateAnimationFrame(id);
     }
 }
 
@@ -1109,50 +1134,42 @@ void ProcessGame() {
     UpdateCamera();
 }
 
-void ClearGame() {
-    DeleteObject(hTexHero);
+void ClearMapTextures() {
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
-    DeleteObject(hTexSpider);
+}
 
+void ClearHeroTextures() {
+    DeleteObject(hTexHero);
     DeleteObject(hTexHeroRightIdle);
-    for (int i = 0; i < 7; i++) {
-        if (hTexHeroRightWalk[i]) DeleteObject(hTexHeroRightWalk[i]);
-    }
-
     DeleteObject(hTexHeroLeftIdle);
-    for (int i = 0; i < 7; i++) {
-        if (hTexHeroLeftWalk[i]) DeleteObject(hTexHeroLeftWalk[i]);
-    }
-
     DeleteObject(hTexHeroUpIdle);
-    for (int i = 0; i < 7; i++) {
-        if (hTexHeroUpWalk[i]) DeleteObject(hTexHeroUpWalk[i]);
-    }
-
     DeleteObject(hTexHeroDownIdle);
-    for (int i = 0; i < 7; i++) {
+
+    for (int i = 0; i < WALK_FRAME_COUNT; i++) {
+        if (hTexHeroRightWalk[i]) DeleteObject(hTexHeroRightWalk[i]);
+        if (hTexHeroLeftWalk[i]) DeleteObject(hTexHeroLeftWalk[i]);
+        if (hTexHeroUpWalk[i]) DeleteObject(hTexHeroUpWalk[i]);
         if (hTexHeroDownWalk[i]) DeleteObject(hTexHeroDownWalk[i]);
     }
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < ATTACK_FRAME_COUNT; i++) {
         if (hTexHeroDownAttack[i]) DeleteObject(hTexHeroDownAttack[i]);
-    }
-
-    for (int i = 0; i < 4; i++) {
         if (hTexHeroUpAttack[i]) DeleteObject(hTexHeroUpAttack[i]);
-    }
-
-    for (int i = 0; i < 4; i++) {
         if (hTexHeroLeftAttack[i]) DeleteObject(hTexHeroLeftAttack[i]);
-    }
-
-    for (int i = 0; i < 4; i++) {
         if (hTexHeroRightAttack[i]) DeleteObject(hTexHeroRightAttack[i]);
     }
-
 }
 
+void ClearSpiderTextures() {
+    DeleteObject(hTexSpider);
+}
+
+void ClearGame() {
+    ClearMapTextures();
+    ClearHeroTextures();
+    ClearSpiderTextures();
+}
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); 
 
 int APIENTRY wWinMain( 

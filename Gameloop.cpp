@@ -2,7 +2,8 @@
 #include <algorithm>
 #include <wingdi.h> 
 #include <vector>
-#include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include <cmath>
 #pragma comment(lib, "Msimg32.lib")
 #pragma comment(lib, "Winmm.lib")
@@ -99,6 +100,23 @@ const float SPIDER_HP = 30.0f;
 const float SPIDER_DAMAGE = 5.0f;
 const float SPIDER_ATTACK_COOLDOWN = 30.0f;
 const float SPIDER_AGGRO_RADIUS = 500.0f;
+
+// Размеры спрайтов
+const int SPRITE_SIZE = 64;
+
+// Количество кадров
+const int WALK_FRAME_COUNT = 7;
+const int ATTACK_FRAME_COUNT = 4;
+
+// Хитбокс героя
+const float HERO_HITBOX_W = 24.0f;
+const float HERO_HITBOX_H = 24.0f;
+const float HERO_HITBOX_OFFSET_Y = 15.0f;
+
+// Хитбокс паука
+const float SPIDER_HITBOX_W = 20.0f;
+const float SPIDER_HITBOX_H = 20.0f;
+const float SPIDER_HITBOX_OFFSET_Y = 5.0f;
 
 int map[MAP_H][MAP_W];
 bool keys[256] = {};
@@ -330,23 +348,39 @@ void CheckLoadHeroIdleTextures() {
     }
 }
 
-void CheckLoadTextures() {
-    CheckLoadHeroIdleTextures();
-
-
+void CheckLoadAttackTextures() {
+    for (int i = 0; i < 4; i++) {
+        if (!hTexHeroDownAttack[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load left walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        if (!hTexHeroUpAttack[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load left walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        if (!hTexHeroLeftAttack[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load left walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        if (!hTexHeroRightAttack[i]) {
+            wchar_t msg[64];
+            swprintf_s(msg, L"Failed to load left walk %d", i + 1);
+            MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
+        }
+    }
 
 }
 
-void LoadBMP() {
-    LoadMapTextures();
-    LoadHeroTextures();
-    LoadSpiderTextures();
-    CheckLoadTextures();
-
-    
-
-  
-
+void CheckLoadMapTextures() {
     if (!hTexWall) {
         MessageBoxW(NULL, L"The textures didn’t load! --> wall.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
@@ -355,9 +389,32 @@ void LoadBMP() {
         MessageBoxW(NULL, L"The textures didn’t load! --> grass.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
 
+
+}
+
+void CheckLoadSpiderTextures() {
     if (!hTexSpider) {
         MessageBoxW(NULL, L"The textures didn’t load! --> spider.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
+
+
+}
+
+void CheckLoadTextures() {
+    CheckLoadMapTextures();
+    CheckLoadHeroIdleTextures();
+    CheckLoadHeroWalkTextures();
+    CheckLoadAttackTextures();
+
+}
+
+void LoadBMP() {
+    LoadMapTextures();
+    LoadHeroTextures();
+    LoadSpiderTextures();
+
+    CheckLoadTextures();
+   
 }
 
 // ENTITY SPAWN ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -459,7 +516,8 @@ void SpawnEntityInRooms() {
             float spawnX = (tx + 0.5f) * TILE;
             float spawnY = (ty + 0.5f) * TILE;
 
-            uint32_t enemyID = SpawnEntity(spawnX, spawnY, 64, 64, hTexSpider, 20, 20, 0, 5);
+            uint32_t enemyID = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexSpider, 
+                SPIDER_HITBOX_W, SPIDER_HITBOX_H, 0, SPIDER_HITBOX_OFFSET_Y);
             hasAI[enemyID] = true;
             ais[enemyID] = { 1, SPIDER_SPEED * 0.15f, SPIDER_AGGRO_RADIUS, 0, 0.0f, 0.0f };
             hasHealth[enemyID] = true;
@@ -473,7 +531,8 @@ void EntityInit() {
     float startX = (firstRoom.x + firstRoom.w / 2.0f) * TILE;
     float startY = (firstRoom.y + firstRoom.h / 2.0f) * TILE;
 
-    HeroID = SpawnEntity(startX, startY, 64, 64, hTexHero, 24, 24, 0, 15);
+    HeroID = SpawnEntity(startX, startY, SPRITE_SIZE, SPRITE_SIZE, hTexHero,
+        HERO_HITBOX_W, HERO_HITBOX_H, 0, HERO_HITBOX_OFFSET_Y);
     hasHealth[HeroID] = true;
     healths[HeroID] = { 100.0f, 100.0f }; 
     hasWeapon[HeroID] = true;
@@ -612,7 +671,7 @@ void DrawEntity(uint32_t id) {
 
     if (!bmp) return;
 
-    int w = 64, h = 64; // Размер спрайта (у нас 64x64)
+    int w = SPRITE_SIZE, h = SPRITE_SIZE; // Размер спрайта (у нас 64x64)
     if (hasRenderable[id]) {
         w = renderables[id].w;
         h = renderables[id].h;
@@ -694,15 +753,8 @@ void UpdateCamera() {
 
 // INPUT ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-void SystemInput() {
-
-    if (keys['G']) {
-        showGrid = !showGrid;
-        keys['G'] = false;
-    }
-
-    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd);
-
+// 1. Только чтение клавиш и запись в velocities
+void UpdateHeroVelocity() {
     if (!hasVelocity[HeroID]) return;
 
     float speed = HERO_SPEED * 0.15f;
@@ -720,92 +772,84 @@ void SystemInput() {
 
     velocities[HeroID].dx = dx;
     velocities[HeroID].dy = dy;
+}
 
-    // --- ANIMATION ---
-    if (hasAnimation[HeroID]) {
-        if (animations[HeroID].state == 2) {
-        
-        }
-        else {
+// 2. Определение направления (facing)
+void UpdateHeroDirection(float dx, float dy) {
+    if (!hasDirection[HeroID]) return;
+    if (dx == 0 && dy == 0) return;
 
-            bool isMoving = (dx != 0 || dy != 0);
-            int targetState = isMoving ? 1 : 0;
+    if (abs(dx) > abs(dy)) {
+        directions[HeroID].facing = (dx < 0) ? 2 : 3; // Left : Right
+    }
+    else {
+        directions[HeroID].facing = (dy < 0) ? 1 : 0; // Up : Down
+    }
+}
 
-            // Запоминаем старое направление
-            int oldFacing = directions[HeroID].facing;
+// 4. Загрузка кадров (walk/idle) для текущего направления
+void SetHeroAnimationFrames(int targetState) {
+    int facing = directions[HeroID].facing;
+    bool isWalk = (targetState == 1);
 
-            // Определяем новое направление
-            if (isMoving) {
-                if (abs(dx) > abs(dy)) {
-                    directions[HeroID].facing = (dx < 0) ? 2 : 3; // Left : Right
-                }
-                else {
-                    directions[HeroID].facing = (dy < 0) ? 1 : 0; // Up : Down
-                }
-            }
-
-            if (animations[HeroID].state != targetState || oldFacing != directions[HeroID].facing) {
-                animations[HeroID].state = targetState;
-                animations[HeroID].currentFrame = 0;
-                animations[HeroID].frameTimer = 0.0f;
-
-                // Настраиваем кадры в зависимости от направления и состояния
-                if (directions[HeroID].facing == 1) { // up
-                    if (targetState == 1) { // Walk
-                        animations[HeroID].frameCount = 7;
-                        for (int i = 0; i < 7; i++) {
-                            animations[HeroID].frames[i] = hTexHeroUpWalk[i];
-                        }
-                    }
-                    else { // Idle
-                        animations[HeroID].frameCount = 1;
-                        animations[HeroID].frames[0] = hTexHeroUpIdle;
-                    }
-                }
-                else if (directions[HeroID].facing == 2) { // Left
-                    if (targetState == 1) { // Walk
-                        animations[HeroID].frameCount = 7;
-                        for (int i = 0; i < 7; i++) {
-                            animations[HeroID].frames[i] = hTexHeroLeftWalk[i];
-                        }
-                    }
-                    else { // Idle
-                        animations[HeroID].frameCount = 1;
-                        animations[HeroID].frames[0] = hTexHeroLeftIdle;
-                    }
-                }
-                else if (directions[HeroID].facing == 3) { // Right
-                    if (targetState == 1) { // Walk
-                        animations[HeroID].frameCount = 7;
-                        for (int i = 0; i < 7; i++) {
-                            animations[HeroID].frames[i] = hTexHeroRightWalk[i];
-                        }
-                    }
-                    else { // Idle
-                        animations[HeroID].frameCount = 1;
-                        animations[HeroID].frames[0] = hTexHeroRightIdle; // Твой idle для right
-                    }
-                }
-                else if (directions[HeroID].facing == 0) { // down
-                    if (targetState == 1) { // Walk
-                        animations[HeroID].frameCount = 7;
-                        for (int i = 0; i < 7; i++) {
-                            animations[HeroID].frames[i] = hTexHeroDownWalk[i];
-                        }
-                    }
-                    else { // Idle
-                        animations[HeroID].frameCount = 1;
-                        animations[HeroID].frames[0] = hTexHeroDownIdle; // Твой idle для right
-                    }
-                }
-                else {
-                    // Остальные направления пока используют дефолтный спрайт
-                    animations[HeroID].frameCount = 1;
-                    animations[HeroID].frames[0] = hTexHero;
-                }
-            }
+    if (facing == 0) { // Down
+        animations[HeroID].frameCount = isWalk ? WALK_FRAME_COUNT : 1;
+        for (int i = 0; i < animations[HeroID].frameCount; i++) {
+            animations[HeroID].frames[i] = isWalk ? hTexHeroDownWalk[i] : hTexHeroDownIdle;
         }
     }
+    else if (facing == 1) { // Up
+        animations[HeroID].frameCount = isWalk ? WALK_FRAME_COUNT : 1;
+        for (int i = 0; i < animations[HeroID].frameCount; i++) {
+            animations[HeroID].frames[i] = isWalk ? hTexHeroUpWalk[i] : hTexHeroUpIdle;
+        }
+    }
+    else if (facing == 2) { // Left
+        animations[HeroID].frameCount = isWalk ? WALK_FRAME_COUNT : 1;
+        for (int i = 0; i < animations[HeroID].frameCount; i++) {
+            animations[HeroID].frames[i] = isWalk ? hTexHeroLeftWalk[i] : hTexHeroLeftIdle;
+        }
+    }
+    else if (facing == 3) { // Right
+        animations[HeroID].frameCount = isWalk ? WALK_FRAME_COUNT : 1;
+        for (int i = 0; i < animations[HeroID].frameCount; i++) {
+            animations[HeroID].frames[i] = isWalk ? hTexHeroRightWalk[i] : hTexHeroRightIdle;
+        }
+    }
+}
+
+// 3. Переключение анимации (idle ↔ walk)
+void UpdateHeroAnimation(float dx, float dy) {
+    if (!hasAnimation[HeroID]) return;
+    if (animations[HeroID].state == 2) return; // Атака идёт — не трогаем
+
+    bool isMoving = (dx != 0 || dy != 0);
+    int targetState = isMoving ? 1 : 0;
+
+    int oldFacing = directions[HeroID].facing;
+
+    if (isMoving) {
+        UpdateHeroDirection(dx, dy);
+    }
+
+    if (animations[HeroID].state != targetState || oldFacing != directions[HeroID].facing) {
+        animations[HeroID].state = targetState;
+        animations[HeroID].currentFrame = 0;
+        animations[HeroID].frameTimer = 0.0f;
+
+        SetHeroAnimationFrames(targetState); // ← выносим загрузку кадров
+    }
+}
+
+
+
+// Итоговая система — короткая и читаемая
+void SystemInput() {
+    if (keys['G']) { showGrid = !showGrid; keys['G'] = false; }
+    if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd);
+
+    UpdateHeroVelocity();
+    UpdateHeroAnimation(velocities[HeroID].dx, velocities[HeroID].dy);
 }
 
 // GAME SYSTEMS ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -926,7 +970,7 @@ void SystemCombat() {
 
             // 2. Загружаем кадры атаки для текущего направления
             int facing = directions[HeroID].facing;
-            int frameCount = 4; // Сколько кадров атаки у тебя нарисовано (поменяй на 3, если 3)
+            int frameCount = ATTACK_FRAME_COUNT; // Сколько кадров атаки у тебя нарисовано (поменяй на 3, если 3)
 
             if (facing == 0) { // Down
                 animations[HeroID].frameCount = frameCount;
@@ -1047,11 +1091,13 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
+    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+
 }
 
 void ProcessGame() {
-    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+   
     
     // darkritualmix.mp3
     SystemInput();

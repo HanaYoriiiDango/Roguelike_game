@@ -191,15 +191,21 @@ void InitWindow() {
 
 } 
 
-void LoadBMP() {
-
+void LoadMapTextures() {
     hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexHero = (HBITMAP)LoadImageW(NULL, L"fiol_girl64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+}
+
+void LoadHeroIdle() {
     hTexHeroRightIdle = (HBITMAP)LoadImageW(NULL, L"hero_right_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftIdle = (HBITMAP)LoadImageW(NULL, L"hero_left_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpIdle = (HBITMAP)LoadImageW(NULL, L"hero_up_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroDownIdle = (HBITMAP)LoadImageW(NULL, L"hero_down_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+}
+
+void LoadHeroWalk() {
     hTexHeroRightWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightWalk[2] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -208,7 +214,6 @@ void LoadBMP() {
     hTexHeroRightWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_right_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
-    hTexHeroLeftIdle = (HBITMAP)LoadImageW(NULL, L"hero_left_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     hTexHeroLeftWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -218,7 +223,6 @@ void LoadBMP() {
     hTexHeroLeftWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroLeftWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_left_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
-    hTexHeroUpIdle = (HBITMAP)LoadImageW(NULL, L"hero_up_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     hTexHeroUpWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroUpWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -228,7 +232,6 @@ void LoadBMP() {
     hTexHeroUpWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroUpWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_up_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
-    hTexHeroDownIdle = (HBITMAP)LoadImageW(NULL, L"hero_down_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
     hTexHeroDownWalk[0] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroDownWalk[1] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -238,6 +241,9 @@ void LoadBMP() {
     hTexHeroDownWalk[5] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk6.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroDownWalk[6] = (HBITMAP)LoadImageW(NULL, L"hero_down_walk7.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+}
+
+void LoadHeroAttack() {
     hTexHeroDownAttack[0] = (HBITMAP)LoadImageW(NULL, L"down_attack1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroDownAttack[1] = (HBITMAP)LoadImageW(NULL, L"down_attack2.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroDownAttack[2] = (HBITMAP)LoadImageW(NULL, L"down_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -258,6 +264,21 @@ void LoadBMP() {
     hTexHeroRightAttack[2] = (HBITMAP)LoadImageW(NULL, L"right_attack3.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexHeroRightAttack[3] = (HBITMAP)LoadImageW(NULL, L"right_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+}
+
+void LoadHeroTextures() {
+    hTexHero = (HBITMAP)LoadImageW(NULL, L"fiol_girl64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    LoadHeroIdle();
+    LoadHeroWalk();
+    LoadHeroAttack();
+}
+
+void LoadSpiderTextures() {
+    hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+}
+
+void CheckLoadHeroWalkTextures() {
     for (int i = 0; i < 7; i++) {
         if (!hTexHeroDownWalk[i]) {
             wchar_t msg[64];
@@ -289,10 +310,42 @@ void LoadBMP() {
             MessageBoxW(NULL, msg, L"LoadBMP Error", MB_ICONERROR);
         }
     }
+}
 
+void CheckLoadHeroIdleTextures() {
     if (!hTexHero) {
         MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
     }
+    if (!hTexHeroRightIdle) {
+        MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexHeroLeftIdle) {
+        MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexHeroUpIdle) {
+        MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexHeroDownIdle) {
+        MessageBoxW(NULL, L"The sprite is not loaded! The hero is left without skin ((", L"Error:LoadBMP", MB_ICONERROR);
+    }
+}
+
+void CheckLoadTextures() {
+    CheckLoadHeroIdleTextures();
+
+
+
+}
+
+void LoadBMP() {
+    LoadMapTextures();
+    LoadHeroTextures();
+    LoadSpiderTextures();
+    CheckLoadTextures();
+
+    
+
+  
 
     if (!hTexWall) {
         MessageBoxW(NULL, L"The textures didn’t load! --> wall.bmp", L"Error:LoadBMP", MB_ICONERROR);

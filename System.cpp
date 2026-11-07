@@ -612,7 +612,8 @@ void DrawEntity(uint32_t id) {
         float hh = colliders[id].h;
         float hx = x + colliders[id].offsetX - hw / 2.0f;
         float hy = y + colliders[id].offsetY - hh / 2.0f;
-        DrawDebugHitbox(hx, hy, hw, hh, RGB(255, 0, 0));
+        COLORREF hitboxColor = (id == HeroID) ? RGB(0, 255, 0) : RGB(255, 255, 0);
+        DrawDebugHitbox(hx, hy, hw, hh, hitboxColor);
     }
 }
 
@@ -641,8 +642,8 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
-    //mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    //mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
 
 }
 void ProcessGame() {
@@ -864,6 +865,10 @@ int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
 int ScreenY(float worldY) { return (int)((worldY - camera.y) * ZOOM); }
 
 // support functions - collision
+bool IsRectOverlap(float rx1, float ry1, float rx2, float ry2,
+    float ex1, float ey1, float ex2, float ey2) {
+    return (rx1 < ex2 && rx2 > ex1 && ry1 < ey2 && ry2 > ey1);
+}
 bool IsWallAt(float worldX, float worldY) {
 
     int tx = (int)(worldX / TILE);

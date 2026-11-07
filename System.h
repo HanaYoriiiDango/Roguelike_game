@@ -77,6 +77,8 @@ int ScreenX(float worldX);
 int ScreenY(float worldY);
 
 // support functions - collision
+bool IsRectOverlap(float rx1, float ry1, float rx2, float ry2,
+	float ex1, float ey1, float ex2, float ey2);
 bool IsWallAt(float worldX, float worldY);
 bool IsWallBetween(float x1, float y1, float x2, float y2);
 float DistanceBetweenSprites(uint32_t a, uint32_t b);

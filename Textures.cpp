@@ -22,3 +22,4 @@ HBITMAP hTexHeroUpAttack[4] = { NULL };
 HBITMAP hTexHeroLeftAttack[4] = { NULL };
 HBITMAP hTexHeroRightAttack[4] = { NULL };
 
+HBITMAP hTexSpiderHurt = NULL;

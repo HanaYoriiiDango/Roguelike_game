@@ -43,6 +43,7 @@ void SystemCombat();
 void SystemAnimation(); 
 void SystemDeath();
 void UpdateCamera();
+void SystemHurtFlash();
 
 // render
 void SystemRender();

@@ -9,7 +9,7 @@ const int MAP_H = 64;
 
 // hero
 const float HERO_SPEED = 60.0f;
-const float HERO_ATTACK_RADIUS = 150.0f;
+const float HERO_ATTACK_RADIUS = 80.0f;
 const float HERO_ATTACK_WIDTH = 40.0f;
 const float HERO_DAMAGE = 20.0f;
 const float HERO_ATTACK_COOLDOWN = 30.0f;

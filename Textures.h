@@ -23,3 +23,5 @@ extern HBITMAP hTexHeroDownAttack[4];
 extern HBITMAP hTexHeroUpAttack[4];
 extern HBITMAP hTexHeroLeftAttack[4];
 extern HBITMAP hTexHeroRightAttack[4];
+
+extern HBITMAP hTexSpiderHurt;

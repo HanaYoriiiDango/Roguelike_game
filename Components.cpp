@@ -1,5 +1,6 @@
 #include "Components.h"
 
+
 // flags
 bool active[MAX_ENTITIES] = {};
 bool hasPosition[MAX_ENTITIES] = {};
@@ -11,6 +12,7 @@ bool hasHealth[MAX_ENTITIES] = {};
 bool hasWeapon[MAX_ENTITIES] = {};
 bool hasDirection[MAX_ENTITIES] = {};
 bool hasAnimation[MAX_ENTITIES] = {};
+bool hasHurtFlash[MAX_ENTITIES] = {};
 
 // component arrays
 Position positions[MAX_ENTITIES];
@@ -22,6 +24,7 @@ Health healths[MAX_ENTITIES];
 Weapon weapons[MAX_ENTITIES];
 Direction directions[MAX_ENTITIES];
 Animation animations[MAX_ENTITIES];
+HurtFlash hurtFlashes[MAX_ENTITIES];
 
 // another
 uint32_t HeroID = 0;

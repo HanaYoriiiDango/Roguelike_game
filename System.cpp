@@ -181,6 +181,7 @@ void LoadHeroTextures() {
 }
 void LoadSpiderTextures() {
     hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexSpiderHurt = (HBITMAP)LoadImageW(NULL, L"spider_hurt.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
 }
 void CheckLoadHeroWalkTextures() {
@@ -279,7 +280,9 @@ void CheckLoadSpiderTextures() {
     if (!hTexSpider) {
         MessageBoxW(NULL, L"The textures didn’t load! --> spider.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
-
+    if (!hTexSpiderHurt) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> spider_hurt.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
 
 }
 void CheckLoadTextures() {
@@ -459,6 +462,15 @@ void UpdateCamera() {
     if (camera.x > MAP_W_px - viewW) camera.x = MAP_W_px - viewW;
     if (camera.y > MAP_H_px - viewH) camera.y = MAP_H_px - viewH;
 }
+void SystemHurtFlash() {
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasHurtFlash[id]) continue;
+        hurtFlashes[id].timer -= 1.0f;
+        if (hurtFlashes[id].timer <= 0) {
+            hasHurtFlash[id] = false;
+        }
+    }
+}
 
 // render
 void SystemRender() {
@@ -619,36 +631,54 @@ void ShowMap() {
 void DrawEntity(uint32_t id) {
     if (!active[id] || !hasPosition[id]) return;
 
+    // === ВЫБОР СПРАЙТА ===
     HBITMAP bmp = NULL;
-    if (hasAnimation[id] && animations[id].frameCount > 0) {
-        bmp = animations[id].frames[animations[id].currentFrame];
+
+    // 1. Вспышка урона (для врагов — красный спрайт)
+    if (hasHurtFlash[id] && hurtFlashes[id].timer > 0) {
+        if (id != HeroID && hasRenderable[id]) {
+            bmp = hTexSpiderHurt;
+        }
     }
-    else if (hasRenderable[id]) {
-        bmp = renderables[id].bmp;
+
+    // 2. Обычная логика (если не вспышка)
+    if (!bmp) {
+        if (hasAnimation[id] && animations[id].frameCount > 0) {
+            bmp = animations[id].frames[animations[id].currentFrame];
+        }
+        else if (hasRenderable[id]) {
+            bmp = renderables[id].bmp;
+        }
     }
 
     if (!bmp) return;
 
-    int w = SPRITE_SIZE, h = SPRITE_SIZE; // Размер спрайта (у нас 64x64)
+    // === РАЗМЕРЫ ===
+    int w = SPRITE_SIZE, h = SPRITE_SIZE;
     if (hasRenderable[id]) {
         w = renderables[id].w;
         h = renderables[id].h;
     }
 
+    // === ПОЗИЦИЯ ===
     float x = positions[id].x;
     float y = positions[id].y;
 
     int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
     int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
+
+    // === ОТРИСОВКА СПРАЙТА ===
     ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
 
-    // Хитбокс для дебага
+    // === ХИТБОКС ДЛЯ ДЕБАГА ===
     if (showGrid && hasCollider[id]) {
         float hw = colliders[id].w;
         float hh = colliders[id].h;
         float hx = x + colliders[id].offsetX - hw / 2.0f;
         float hy = y + colliders[id].offsetY - hh / 2.0f;
-        COLORREF hitboxColor = (id == HeroID) ? RGB(0, 255, 0) : RGB(255, 255, 0);
+
+        // Цвет: герой — зелёный, враги — красный
+        COLORREF hitboxColor = (id == HeroID) ? RGB(0, 255, 0) : RGB(255, 0, 0);
         DrawDebugHitbox(hx, hy, hw, hh, hitboxColor);
     }
 }
@@ -678,8 +708,8 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
-    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    //mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    //mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
 
 }
 void ProcessGame() {
@@ -690,6 +720,7 @@ void ProcessGame() {
     SystemMovement();
     SystemCombat();
     SystemAnimation();
+    SystemHurtFlash();
     SystemDeath();
     UpdateCamera();
 }
@@ -858,6 +889,10 @@ void ApplyHeroDamage() {
 
         if (IsAttackHit(id)) {
             healths[id].hp -= weapons[HeroID].damage;
+
+            // Вспышка урона
+            hasHurtFlash[id] = true;
+            hurtFlashes[id].timer = 12.0f; // 5 кадров ≈ 0.08 сек
         }
     }
 }
@@ -1034,4 +1069,5 @@ void ClearHeroTextures() {
 }
 void ClearSpiderTextures() {
     DeleteObject(hTexSpider);
+    DeleteObject(hTexSpiderHurt);
 }

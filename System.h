@@ -49,6 +49,7 @@ void SystemRender();
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent);
 void DrawGrid();
 void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color);
+void DrawAttackZone();
 void ShowMap();
 void DrawEntity(uint32_t id);
 
@@ -61,6 +62,7 @@ void ShowGame();
 void ClearGame();
 
 // support functions 
+bool IsAttackHit(uint32_t enemyID);
 void UpdateHeroVelocity();
 void UpdateHeroDirection(float dx, float dy);
 void SetHeroAnimationFrames(int targetState);

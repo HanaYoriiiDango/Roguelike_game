@@ -474,6 +474,10 @@ void SystemRender() {
     // Draw hero on top
     DrawEntity(HeroID);
 
+    if (showGrid) {
+        DrawAttackZone();
+    }
+
     // HUD
     wchar_t buf[64];
     swprintf_s(buf, L"HP: %.0f", healths[HeroID].hp);
@@ -546,6 +550,38 @@ void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF colo
     HBRUSH oldBrush = (HBRUSH)SelectObject(window.mem_dc, GetStockObject(NULL_BRUSH));
 
     Rectangle(window.mem_dc, sx, sy, sx + sw, sy + sh);
+
+    SelectObject(window.mem_dc, oldPen);
+    SelectObject(window.mem_dc, oldBrush);
+    DeleteObject(pen);
+}
+void DrawAttackZone() {
+    if (!showGrid) return;
+    if (!hasCollider[HeroID] || !hasDirection[HeroID]) return;
+
+    float hx = positions[HeroID].x + colliders[HeroID].offsetX;
+    float hy = positions[HeroID].y + colliders[HeroID].offsetY;
+
+    float R = HERO_ATTACK_RADIUS;
+    float W = HERO_ATTACK_WIDTH;
+    float rx1, ry1, rx2, ry2;
+
+    int facing = directions[HeroID].facing;
+    if (facing == 3) { rx1 = hx; ry1 = hy - W / 2; rx2 = hx + R; ry2 = hy + W / 2; }
+    else if (facing == 2) { rx1 = hx - R; ry1 = hy - W / 2; rx2 = hx; ry2 = hy + W / 2; }
+    else if (facing == 1) { rx1 = hx - W / 2; ry1 = hy - R; rx2 = hx + W / 2; ry2 = hy; }
+    else { rx1 = hx - W / 2; ry1 = hy; rx2 = hx + W / 2; ry2 = hy + R; }
+
+    int sx1 = ScreenX(rx1);
+    int sy1 = ScreenY(ry1);
+    int sx2 = ScreenX(rx2);
+    int sy2 = ScreenY(ry2);
+
+    HPEN pen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+    HPEN oldPen = (HPEN)SelectObject(window.mem_dc, pen);
+    HBRUSH oldBrush = (HBRUSH)SelectObject(window.mem_dc, GetStockObject(NULL_BRUSH));
+
+    Rectangle(window.mem_dc, sx1, sy1, sx2, sy2);
 
     SelectObject(window.mem_dc, oldPen);
     SelectObject(window.mem_dc, oldBrush);
@@ -677,6 +713,49 @@ void ClearGame() {
 }
 
 // support functions - logic
+bool IsAttackHit(uint32_t enemyID) {
+    if (!hasCollider[HeroID] || !hasCollider[enemyID]) return false;
+    if (!hasDirection[HeroID]) return false;
+
+    // Центр хитбокса героя (откуда начинается удар)
+    float hx = positions[HeroID].x + colliders[HeroID].offsetX;
+    float hy = positions[HeroID].y + colliders[HeroID].offsetY;
+
+    // Прямоугольник удара (вытянут вдоль взгляда)
+    float R = HERO_ATTACK_RADIUS;
+    float W = HERO_ATTACK_WIDTH;
+    float rx1, ry1, rx2, ry2;
+
+    int facing = directions[HeroID].facing;
+    if (facing == 3) { // Right
+        rx1 = hx;         ry1 = hy - W / 2;
+        rx2 = hx + R;     ry2 = hy + W / 2;
+    }
+    else if (facing == 2) { // Left
+        rx1 = hx - R;     ry1 = hy - W / 2;
+        rx2 = hx;         ry2 = hy + W / 2;
+    }
+    else if (facing == 1) { // Up
+        rx1 = hx - W / 2; ry1 = hy - R;
+        rx2 = hx + W / 2; ry2 = hy;
+    }
+    else { // Down (0)
+        rx1 = hx - W / 2; ry1 = hy;
+        rx2 = hx + W / 2; ry2 = hy + R;
+    }
+
+    // Хитбокс врага
+    float ex = positions[enemyID].x + colliders[enemyID].offsetX;
+    float ey = positions[enemyID].y + colliders[enemyID].offsetY;
+    float ehw = colliders[enemyID].w / 2.0f;
+    float ehh = colliders[enemyID].h / 2.0f;
+
+    float ex1 = ex - ehw, ey1 = ey - ehh;
+    float ex2 = ex + ehw, ey2 = ey + ehh;
+
+    // Проверка через универсальную функцию
+    return IsRectOverlap(rx1, ry1, rx2, ry2, ex1, ey1, ex2, ey2);
+}
 void UpdateHeroVelocity() {
     if (!hasVelocity[HeroID]) return;
 
@@ -777,8 +856,7 @@ void ApplyHeroDamage() {
         if (!active[id] || !hasHealth[id] || !hasPosition[id]) continue;
         if (id == HeroID) continue;
 
-        float dist = DistanceBetweenHitboxes(id, HeroID);
-        if (dist < HERO_ATTACK_RADIUS) {
+        if (IsAttackHit(id)) {
             healths[id].hp -= weapons[HeroID].damage;
         }
     }
@@ -911,18 +989,21 @@ float DistanceBetweenHitboxes(uint32_t a, uint32_t b) {
 bool IsHitboxOverlap(uint32_t a, uint32_t b) {
     if (!hasCollider[a] || !hasCollider[b]) return false;
 
-    float halfW_a = colliders[a].w / 2.0f;
-    float halfH_a = colliders[a].h / 2.0f;
-    float halfW_b = colliders[b].w / 2.0f;
-    float halfH_b = colliders[b].h / 2.0f;
+    float ax = positions[a].x + colliders[a].offsetX;
+    float ay = positions[a].y + colliders[a].offsetY;
+    float ahw = colliders[a].w / 2.0f;
+    float ahh = colliders[a].h / 2.0f;
+    float ax1 = ax - ahw, ay1 = ay - ahh;
+    float ax2 = ax + ahw, ay2 = ay + ahh;
 
-    float cx_a = positions[a].x + colliders[a].offsetX;
-    float cy_a = positions[a].y + colliders[a].offsetY;
-    float cx_b = positions[b].x + colliders[b].offsetX;
-    float cy_b = positions[b].y + colliders[b].offsetY;
+    float bx = positions[b].x + colliders[b].offsetX;
+    float by = positions[b].y + colliders[b].offsetY;
+    float bhw = colliders[b].w / 2.0f;
+    float bhh = colliders[b].h / 2.0f;
+    float bx1 = bx - bhw, by1 = by - bhh;
+    float bx2 = bx + bhw, by2 = by + bhh;
 
-    return (abs(cx_a - cx_b) < (halfW_a + halfW_b)) &&
-        (abs(cy_a - cy_b) < (halfH_a + halfH_b));
+    return IsRectOverlap(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
 }
 
 // support functions - cleaning

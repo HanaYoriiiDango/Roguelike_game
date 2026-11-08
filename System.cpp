@@ -98,6 +98,9 @@ void EntityInit() {
     animations[HeroID].state = 0; // 0 = idle
     animations[HeroID].frames[0] = hTexHero; // Пока дефолтный спрайт
 
+    hasDash[HeroID] = true;
+    dashes[HeroID] = { 0, 0, 0, 0 };
+
     SpawnEntityInRooms();
 }
 
@@ -334,6 +337,7 @@ void SystemAI() {
 
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id] || !hasAI[id] || !hasPosition[id] || !hasVelocity[id]) continue;
+        if (hasKnockback[id] && knockbacks[id].timer > 0) continue;
 
         if (ais[id].type == 1) {
 
@@ -368,6 +372,57 @@ void SystemAI() {
                 velocities[id] = { 0, 0 }; // stop!
             }
         }
+    }
+}
+void SystemDash() {
+    if (!hasDash[HeroID]) return;
+
+    // 1. Кулдаун (уменьшается всегда)
+    if (dashes[HeroID].cooldownTimer > 0) {
+        dashes[HeroID].cooldownTimer -= 1.0f;
+    }
+
+    // 2. Активация (по Shift)
+    if (keys[VK_SPACE] && dashes[HeroID].cooldownTimer <= 0 && dashes[HeroID].timer <= 0) {
+        // Направление дэша — из текущего движения
+        float dx = 0, dy = 0;
+        float speed = HERO_SPEED * 0.15f;
+
+        if (keys['W']) dy -= speed;
+        if (keys['S']) dy += speed;
+        if (keys['A']) dx -= speed;
+        if (keys['D']) dx += speed;
+
+        // Нормализация (если диагональ)
+        if (dx != 0 && dy != 0) {
+            dx *= 0.7071f;
+            dy *= 0.7071f;
+        }
+
+        // Если стоим — дэш в направлении взгляда
+        if (dx == 0 && dy == 0) {
+            int facing = directions[HeroID].facing;
+            if (facing == 0) dy = 1;       // Down
+            else if (facing == 1) dy = -1; // Up
+            else if (facing == 2) dx = -1; // Left
+            else if (facing == 3) dx = 1;  // Right
+        }
+
+        // Запуск дэша
+        dashes[HeroID].timer = DASH_DURATION;
+        dashes[HeroID].cooldownTimer = DASH_COOLDOWN;
+        dashes[HeroID].dx = dx;
+        dashes[HeroID].dy = dy;
+    }
+
+    // 3. Применение (перезаписываем velocity)
+    if (dashes[HeroID].timer > 0) {
+        dashes[HeroID].timer -= 1.0f;
+
+        // Дэш в 5 раз быстрее
+        float multiplier = DASH_SPEED / (HERO_SPEED * 0.15f);
+        velocities[HeroID].dx = dashes[HeroID].dx * multiplier;
+        velocities[HeroID].dy = dashes[HeroID].dy * multiplier;
     }
 }
 void SystemMovement() {
@@ -468,6 +523,23 @@ void SystemHurtFlash() {
         hurtFlashes[id].timer -= 1.0f;
         if (hurtFlashes[id].timer <= 0) {
             hasHurtFlash[id] = false;
+        }
+    }
+}
+void SystemKnockback() {
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasKnockback[id]) continue;
+
+        if (knockbacks[id].timer > 0) {
+            knockbacks[id].timer -= 1.0f;
+
+            // Применяем отталкивание через velocity
+            velocities[id].dx = knockbacks[id].dx * 0.15f;
+            velocities[id].dy = knockbacks[id].dy * 0.15f;
+
+            if (knockbacks[id].timer <= 0) {
+                hasKnockback[id] = false;
+            }
         }
     }
 }
@@ -717,6 +789,8 @@ void ProcessGame() {
     // darkritualmix.mp3
     SystemInput();
     SystemAI();
+    SystemDash();
+    SystemKnockback();
     SystemMovement();
     SystemCombat();
     SystemAnimation();
@@ -889,10 +963,19 @@ void ApplyHeroDamage() {
 
         if (IsAttackHit(id)) {
             healths[id].hp -= weapons[HeroID].damage;
-
-            // Вспышка урона
             hasHurtFlash[id] = true;
-            hurtFlashes[id].timer = 12.0f; // 5 кадров ≈ 0.08 сек
+            hurtFlashes[id].timer = 12.0f;
+
+            // Отталкивание
+            float dx = positions[id].x - positions[HeroID].x;
+            float dy = positions[id].y - positions[HeroID].y;
+            float len = sqrt(dx * dx + dy * dy);
+            if (len > 0.001f) {
+                hasKnockback[id] = true;
+                knockbacks[id].timer = KNOCKBACK_DURATION;
+                knockbacks[id].dx = (dx / len) * KNOCKBACK_FORCE;
+                knockbacks[id].dy = (dy / len) * KNOCKBACK_FORCE;
+            }
         }
     }
 }
@@ -931,6 +1014,9 @@ void EnemyAttackHero() {
         ais[id].attackTimer -= 1.0f;
 
         if (IsHitboxOverlap(id, HeroID) && ais[id].attackTimer <= 0) {
+            // Неуязвимость во время дэша
+            if (hasDash[HeroID] && dashes[HeroID].timer > 0) continue;
+
             healths[HeroID].hp -= SPIDER_DAMAGE;
             ais[id].attackTimer = SPIDER_ATTACK_COOLDOWN;
         }

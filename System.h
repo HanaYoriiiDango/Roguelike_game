@@ -38,12 +38,14 @@ uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP bmp,
 // main game system - logic 
 void SystemInput();
 void SystemAI();
+void SystemDash();
 void SystemMovement();
 void SystemCombat();
 void SystemAnimation(); 
 void SystemDeath();
 void UpdateCamera();
 void SystemHurtFlash();
+void SystemKnockback();
 
 // render
 void SystemRender();

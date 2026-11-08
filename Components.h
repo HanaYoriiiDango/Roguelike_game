@@ -8,6 +8,8 @@
 const int MAX_ENTITIES = 1000;
 
 
+
+
 // flags
 extern bool active[MAX_ENTITIES];
 extern bool hasPosition[MAX_ENTITIES];
@@ -20,6 +22,8 @@ extern bool hasWeapon[MAX_ENTITIES];
 extern bool hasDirection[MAX_ENTITIES];
 extern bool hasAnimation[MAX_ENTITIES];
 extern bool hasHurtFlash[MAX_ENTITIES];
+extern bool hasKnockback[MAX_ENTITIES];
+extern bool hasDash[MAX_ENTITIES];
 
 // structures
 struct Position { float x, y; };
@@ -58,6 +62,16 @@ struct Room {
     int w, h;
 };
 
+struct Knockback {
+    float timer;   // Сколько кадров ещё летит
+    float dx, dy;  // Направление отталкивания
+};
+
+struct Dash {
+    float timer;         // Сколько кадров ещё идёт дэш
+    float cooldownTimer; // Сколько кадров до следующего дэша
+    float dx, dy;        // Направление дэша (нормализованное)
+};
 
 // component arrays
 extern Position positions[MAX_ENTITIES];
@@ -70,6 +84,8 @@ extern Weapon weapons[MAX_ENTITIES];
 extern Direction directions[MAX_ENTITIES];
 extern Animation animations[MAX_ENTITIES];
 extern HurtFlash hurtFlashes[MAX_ENTITIES];
+extern Knockback knockbacks[MAX_ENTITIES];
+extern Dash dashes[MAX_ENTITIES];
 
 // another
 extern uint32_t HeroID;

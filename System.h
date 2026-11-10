@@ -51,6 +51,7 @@ void SystemHurtFlash();
 void SystemKnockback();
 void SystemPortal();
 void SystemLoot();
+void SystemShop();
 
 
 // render
@@ -86,6 +87,7 @@ void UpdateAnimationFrame(uint32_t id);
 bool EnemyCanSeeHero(uint32_t id);
 void GhostHitHero();
 void SpawnGhost(uint32_t shooterID);
+int GetShopPrice(int basePrice);
 
 int ScreenX(float worldX);
 int ScreenY(float worldY);

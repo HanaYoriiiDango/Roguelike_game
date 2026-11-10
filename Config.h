@@ -13,6 +13,10 @@ const int TILE_WASD = 3;
 const int TILE_SPACE = 4;
 const int TILE_LEFT_CLICK = 5;
 
+// multiplicators
+const int SHOP_BASE_PRICE = 5;       // Базовая цена
+const float SHOP_PRICE_MULTIPLIER = 1.5f; // Рост цены за этаж (×1.5)
+
 // hero
 const float HERO_SPEED = 60.0f;
 const float HERO_ATTACK_RADIUS = 80.0f;

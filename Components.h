@@ -6,7 +6,6 @@
 
 const int MAX_ENTITIES = 1000;
 
-
 // flags
 extern bool active[MAX_ENTITIES];
 extern bool hasPosition[MAX_ENTITIES];
@@ -22,6 +21,7 @@ extern bool hasHurtFlash[MAX_ENTITIES];
 extern bool hasKnockback[MAX_ENTITIES];
 extern bool hasDash[MAX_ENTITIES];
 extern bool hasLoot[MAX_ENTITIES];
+extern bool hasShopItem[MAX_ENTITIES];
 
 // structures
 struct Position { float x, y; };
@@ -71,6 +71,10 @@ struct Dash {
     float cooldownTimer; // Сколько кадров до следующего дэша
     float dx, dy;        // Направление дэша (нормализованное)
 };
+struct ShopItem {
+    int type;   // 0 = HP, 1 = DMG, 2 = SPEED
+    int price;  // Цена в монетах
+};
 
 // component arrays
 extern Position positions[MAX_ENTITIES];
@@ -86,6 +90,7 @@ extern HurtFlash hurtFlashes[MAX_ENTITIES];
 extern Loot loots[MAX_ENTITIES];
 extern Knockback knockbacks[MAX_ENTITIES];
 extern Dash dashes[MAX_ENTITIES];
+extern ShopItem shopItems[MAX_ENTITIES];
 
 // another
 extern uint32_t HeroID;
@@ -99,4 +104,4 @@ extern std::vector<Room> rooms;
 extern int map[MAP_H][MAP_W];
 extern int gold;
 extern int floorLevel;
-
+extern float speedMultiplier;  // Множитель скорости (1.0 = базовая)

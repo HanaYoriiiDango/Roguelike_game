@@ -146,7 +146,23 @@ void EntityInit() {
     hasDash[HeroID] = true;
     dashes[HeroID] = { 0, 0, 0, 0 };
 
-    gold = 0;
+    // Спавн 3 зелий с отступом
+    float spacing = 100.0f;
+
+    // HP зелье (слева)
+    uint32_t hpID = SpawnEntity(startX - spacing, startY - 100.0f, 32, 32, hTexHpPotion, 24, 24, 0, 0);
+    hasShopItem[hpID] = true;
+    shopItems[hpID] = { 0, GetShopPrice(SHOP_BASE_PRICE) };  // HP // HP, цена 5
+
+    // DMG зелье (центр)
+    uint32_t dmgID = SpawnEntity(startX, startY - 100.0f, 32, 32, hTexDamagePotion, 24, 24, 0, 0);
+    hasShopItem[dmgID] = true;
+    shopItems[dmgID] = { 1, GetShopPrice(SHOP_BASE_PRICE) }; // DMG, цена 5
+
+    // Speed зелье (справа)
+    uint32_t spdID = SpawnEntity(startX + spacing, startY - 100.0f, 32, 32, hTexSpeedPotion, 24, 24, 0, 0);
+    hasShopItem[spdID] = true;
+    shopItems[spdID] = { 2, GetShopPrice(SHOP_BASE_PRICE) }; // SPEED, цена 5
 
     SpawnEntityInRooms();
 }
@@ -436,6 +452,8 @@ void SystemInput() {
         RestartLevel();
         keys['R'] = false;
         floorLevel = 1;
+        speedMultiplier = 1.0f; // Сброс скорости
+
         return;
     }
 
@@ -696,6 +714,7 @@ void SystemDeath() {
     if (hasHealth[HeroID] && healths[HeroID].hp <= 0) {
         RestartLevel();
         floorLevel = 1;
+        speedMultiplier = 1.0f; // Сброс скорости
 
         return;
     }
@@ -821,6 +840,44 @@ void SystemLoot() {
         }
     }
 }
+void SystemShop() {
+    if (!hasCollider[HeroID] || !hasPosition[HeroID]) return;
+
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasShopItem[id] || !hasCollider[id] || !hasPosition[id]) continue;
+
+        if (IsHitboxOverlap(id, HeroID)) {
+            int price = shopItems[id].price;
+
+            // Проверяем, хватает ли золота
+            if (gold >= price) {
+                gold -= price;
+
+                // Применяем эффект
+                if (shopItems[id].type == 0) {
+                    // HP
+                    healths[HeroID].maxHp += 20.0f;
+                    healths[HeroID].hp += 20.0f;
+                }
+                else if (shopItems[id].type == 1) {
+                    // DMG
+                    weapons[HeroID].damage += 5.0f;
+                }
+                else if (shopItems[id].type == 2) {
+                    // SPEED
+                    speedMultiplier += 0.1f; // +10% скорости
+                }
+
+                // Удаляем предмет
+                active[id] = false;
+                hasPosition[id] = false;
+                hasRenderable[id] = false;
+                hasCollider[id] = false;
+                hasShopItem[id] = false;
+            }
+        }
+    }
+}
 
 // render
 void SystemRender() {
@@ -840,13 +897,36 @@ void SystemRender() {
         DrawAttackZone();
     }
 
+    float currentSpeed = HERO_SPEED * speedMultiplier;
+    float speedPercent = speedMultiplier * 100.0f;
+
     // HUD
-    wchar_t buf[128];
-    swprintf_s(buf, L"HP: %.0f  Gold: %d  DMG: %.0f  Floor: %d",
-        healths[HeroID].hp, gold, weapons[HeroID].damage, floorLevel);
+    wchar_t buf[256];
+    swprintf_s(buf, L"HP: %.0f  Gold: %d  DMG: %.0f  Speed: %.0f%%  Floor: %d",
+        healths[HeroID].hp,
+        gold,
+        weapons[HeroID].damage,
+        speedPercent,
+        floorLevel);
     SetTextColor(window.mem_dc, RGB(255, 255, 255));
     SetBkMode(window.mem_dc, TRANSPARENT);
     TextOutW(window.mem_dc, 20, 20, buf, wcslen(buf));
+
+    // Цены над предметами магазина
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasShopItem[id]) continue;
+        if (!hasPosition[id]) continue;
+
+        wchar_t priceText[16];
+        swprintf_s(priceText, L"%d", shopItems[id].price);
+
+        int sx = ScreenX(positions[id].x) - 10;
+        int sy = ScreenY(positions[id].y) - 40;
+
+        SetTextColor(window.mem_dc, RGB(255, 215, 0)); // Золотой
+        SetBkMode(window.mem_dc, TRANSPARENT);
+        TextOutW(window.mem_dc, sx, sy, priceText, wcslen(priceText));
+    }
 }
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
@@ -1085,6 +1165,7 @@ void ProcessGame() {
     SystemAnimation();
     SystemHurtFlash();
     SystemLoot();
+    SystemShop(); 
     SystemPortal();
     SystemDeath();
     UpdateCamera();
@@ -1128,7 +1209,6 @@ void RestartLevel() {
 
     // 2. Очистить комнаты и карту
     rooms.clear();
-    gold = 0;
 
     // 3. Пересоздать
     GenerateMap();
@@ -1182,7 +1262,7 @@ bool IsAttackHit(uint32_t enemyID) {
 void UpdateHeroVelocity() {
     if (!hasVelocity[HeroID]) return;
 
-    float speed = HERO_SPEED * 0.15f;
+    float speed = HERO_SPEED * 0.15f * speedMultiplier;
     float dx = 0, dy = 0;
 
     if (keys['W']) dy -= speed;
@@ -1437,6 +1517,13 @@ void SpawnGhost(uint32_t shooterID) {
     hasHealth[ghostID] = true;
     healths[ghostID] = { 1.0f, 1.0f };
 
+}
+int GetShopPrice(int basePrice) {
+    float price = basePrice;
+    for (int i = 1; i < floorLevel; i++) {
+        price *= SHOP_PRICE_MULTIPLIER;
+    }
+    return (int)price;
 }
 
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }

@@ -4,9 +4,15 @@
 HBITMAP hTexWall = NULL;
 HBITMAP hTexGrass = NULL;
 HBITMAP hTexPortal = NULL;
+HBITMAP hTexWasdTile = NULL;
+HBITMAP hTexSpaceTile = NULL;
+HBITMAP hTexLeftClickTile = NULL;
 
 // items
 HBITMAP hTexCoin = NULL;
+HBITMAP hTexHpPotion = NULL;
+HBITMAP hTexSpeedPotion = NULL;
+HBITMAP hTexDamagePotion = NULL;
 
 // hero
 HBITMAP hTexHero = NULL;

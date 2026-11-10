@@ -5,9 +5,15 @@
 extern HBITMAP hTexWall;
 extern HBITMAP hTexGrass;
 extern HBITMAP hTexPortal;
+extern HBITMAP hTexWasdTile;
+extern HBITMAP hTexSpaceTile;
+extern HBITMAP hTexLeftClickTile;
 
 // items
 extern HBITMAP hTexCoin;
+extern HBITMAP hTexHpPotion;
+extern HBITMAP hTexSpeedPotion;
+extern HBITMAP hTexDamagePotion;
 
 // hero
 extern HBITMAP hTexHero;

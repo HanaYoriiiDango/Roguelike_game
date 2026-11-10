@@ -59,6 +59,18 @@ void GenerateMap() {
         map[portalY][portalX] = TILE_PORTAL;
     }
 
+    // Подсказки в центре первой комнаты
+    Room firstRoom = rooms[0];
+    int centerX = firstRoom.x + firstRoom.w / 2;
+    int centerY = firstRoom.y + firstRoom.h / 2;
+
+    // Ставим 3 подсказки в ряд по центру (горизонтально)
+    // WASD — слева, Space — центр, ЛКМ — справа
+    if (centerY > 0 && centerY < MAP_H - 1) {
+        if (centerX - 1 > 0 && centerX - 1 < MAP_W - 1) map[centerY][centerX - 1] = TILE_WASD;
+        if (centerX > 0 && centerX < MAP_W - 1) map[centerY][centerX] = TILE_SPACE;
+        if (centerX + 1 > 0 && centerX + 1 < MAP_W - 1) map[centerY][centerX + 1] = TILE_LEFT_CLICK;
+    }
 
 }
 void SpawnEntityInRooms() {
@@ -144,6 +156,9 @@ void LoadMapTextures() {
     hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexPortal = (HBITMAP)LoadImageW(NULL, L"portal_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexWasdTile = (HBITMAP)LoadImageW(NULL, L"wasd_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexSpaceTile = (HBITMAP)LoadImageW(NULL, L"dash_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexLeftClickTile = (HBITMAP)LoadImageW(NULL, L"attack_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 }
 void LoadHeroIdle() {
     hTexHeroRightIdle = (HBITMAP)LoadImageW(NULL, L"hero_right_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -237,6 +252,9 @@ void LoadEnemyTextures() {
 }
 void LoadItemTextures() {
     hTexCoin = (HBITMAP)LoadImageW(NULL, L"gold.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHpPotion = (HBITMAP)LoadImageW(NULL, L"hp_potion.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexSpeedPotion = (HBITMAP)LoadImageW(NULL, L"speed_potion.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexDamagePotion = (HBITMAP)LoadImageW(NULL, L"damage_potion.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
 }
 void CheckLoadHeroWalkTextures() {
@@ -331,7 +349,16 @@ void CheckLoadMapTextures() {
     if (!hTexPortal) {
         MessageBoxW(NULL, L"The textures didn’t load! --> portal.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
-
+    if (!hTexWasdTile) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> wasd_tile.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexSpaceTile) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> dash_tile.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexLeftClickTile) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> attack_tile.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+   
 }
 void CheckLoadEnemyTextures() {
     if (!hTexSpider) {
@@ -358,7 +385,10 @@ void CheckLoadEnemyTextures() {
 }
 void CheckLoadItemTextures() {
     if (!hTexCoin) MessageBoxW(NULL, L"coin.bmp not found!", L"Error", MB_ICONERROR);
-
+    if (!hTexHpPotion) MessageBoxW(NULL, L"hp_potion.bmp not found!", L"Error", MB_ICONERROR);
+    if (!hTexSpeedPotion) MessageBoxW(NULL, L"speed_potion.bmp not found!", L"Error", MB_ICONERROR);
+    if (!hTexDamagePotion) MessageBoxW(NULL, L"damage_potion.bmp not found!", L"Error", MB_ICONERROR);
+   
 }
 void CheckLoadTextures() {
     CheckLoadMapTextures();
@@ -946,6 +976,9 @@ void ShowMap() {
             HBITMAP tex;
             if (map[ty][tx] == TILE_WALL) tex = hTexWall;
             else if (map[ty][tx] == TILE_PORTAL) tex = hTexPortal;
+            else if (map[ty][tx] == TILE_WASD) tex = hTexWasdTile;
+            else if (map[ty][tx] == TILE_SPACE) tex = hTexSpaceTile;
+            else if (map[ty][tx] == TILE_LEFT_CLICK) tex = hTexLeftClickTile;
             else tex = hTexGrass;
 
             ShowSprite(sx, sy, size, size, tex, false);
@@ -1478,10 +1511,15 @@ void ClearMapTextures() {
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
     DeleteObject(hTexPortal);
+    DeleteObject(hTexWasdTile);
+    DeleteObject(hTexSpaceTile);
+    DeleteObject(hTexLeftClickTile);
 }
 void ClearItemTextures() {
     DeleteObject(hTexCoin);
-
+    DeleteObject(hTexHpPotion);
+    DeleteObject(hTexSpeedPotion);
+    DeleteObject(hTexDamagePotion);
 
 }
 void ClearHeroTextures() {

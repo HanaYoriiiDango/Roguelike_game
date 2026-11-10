@@ -9,6 +9,9 @@ const int MAP_H = 64;
 const int TILE_FLOOR = 0;
 const int TILE_WALL = 1;
 const int TILE_PORTAL = 2;
+const int TILE_WASD = 3;
+const int TILE_SPACE = 4;
+const int TILE_LEFT_CLICK = 5;
 
 // hero
 const float HERO_SPEED = 60.0f;

@@ -1,5 +1,6 @@
 #include "Components.h"
 
+
 // flags
 bool active[MAX_ENTITIES] = {};
 bool hasPosition[MAX_ENTITIES] = {};
@@ -14,6 +15,7 @@ bool hasAnimation[MAX_ENTITIES] = {};
 bool hasHurtFlash[MAX_ENTITIES] = {};
 bool hasKnockback[MAX_ENTITIES] = {};
 bool hasDash[MAX_ENTITIES] = {};
+bool hasLoot[MAX_ENTITIES] = {};
 
 // component arrays
 Position positions[MAX_ENTITIES];
@@ -28,6 +30,7 @@ Animation animations[MAX_ENTITIES];
 HurtFlash hurtFlashes[MAX_ENTITIES];
 Knockback knockbacks[MAX_ENTITIES];
 Dash dashes[MAX_ENTITIES];
+Loot loots[MAX_ENTITIES];
 
 // another
 uint32_t HeroID = 0;
@@ -39,4 +42,5 @@ bool showGrid = false;
 bool mouseLeftDown = false;
 std::vector<Room> rooms;
 int map[MAP_H][MAP_W];
-
+int gold = 0;
+int floorLevel = 1;

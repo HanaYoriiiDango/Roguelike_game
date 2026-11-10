@@ -11,11 +11,9 @@ const int TILE_WALL = 1;
 const int TILE_PORTAL = 2;
 
 // hero
-extern int gold = 0;
-
 const float HERO_SPEED = 60.0f;
 const float HERO_ATTACK_RADIUS = 80.0f;
-const float HERO_ATTACK_WIDTH = 40.0f;
+const float HERO_ATTACK_WIDTH = 80.0f;
 const float HERO_DAMAGE = 20.0f;
 const float HERO_ATTACK_COOLDOWN = 30.0f;
 const float KNOCKBACK_FORCE = 50.0f;   // Сила отталкивания (пикселей в секунду)
@@ -30,6 +28,30 @@ const float SPIDER_HP = 30.0f;
 const float SPIDER_DAMAGE = 5.0f;
 const float SPIDER_ATTACK_COOLDOWN = 30.0f;
 const float SPIDER_AGGRO_RADIUS = 500.0f;
+
+// bat
+const float BAT_SPEED = 8.0f;
+const float BAT_HP = 60.0f;
+const float BAT_DAMAGE = 3.0f;
+const float BAT_ATTACK_COOLDOWN = 20.0f;
+const float BAT_AGGRO_RADIUS = 400.0f;
+const float BAT_HITBOX_W = 16.0f;
+const float BAT_HITBOX_H = 16.0f;
+const float BAT_HITBOX_OFFSET_Y = 5.0f;
+
+// necromancer 
+const float SHOOTER_HP = 25.0f;
+const float SHOOTER_AGGRO_RADIUS = 600.0f;
+const float SHOOTER_SHOOT_COOLDOWN = 90.0f; // 1.5 сек
+const float SHOOTER_HITBOX_W = 24.0f;
+const float SHOOTER_HITBOX_H = 24.0f;
+const float SHOOTER_HITBOX_OFFSET_Y = 15.0f;
+
+// gost
+const float GHOST_SPEED = 150.0f;
+const float GHOST_DAMAGE = 10.0f;
+const float GHOST_HITBOX_W = 16.0f;
+const float GHOST_HITBOX_H = 16.0f;
 
 // size sprite
 const int SPRITE_SIZE = 64;

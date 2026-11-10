@@ -23,12 +23,14 @@ void LoadHeroWalk();
 void LoadHeroAttack();
 void LoadHeroDash();
 void LoadHeroTextures();
-void LoadSpiderTextures();
+void LoadEnemyTextures();
+void LoadItemTextures();
 void CheckLoadHeroWalkTextures();
 void CheckLoadHeroIdleTextures();
 void CheckLoadAttackTextures();
 void CheckLoadMapTextures();
-void CheckLoadSpiderTextures();
+void CheckLoadEnemyTextures();
+void CheckLoadItemTextures();
 void CheckLoadTextures();
 
 // entity
@@ -48,6 +50,7 @@ void UpdateCamera();
 void SystemHurtFlash();
 void SystemKnockback();
 void SystemPortal();
+void SystemLoot();
 
 
 // render
@@ -81,6 +84,8 @@ void EnemyAttackHero();
 void EndAttack(uint32_t id);
 void UpdateAnimationFrame(uint32_t id);
 bool EnemyCanSeeHero(uint32_t id);
+void GhostHitHero();
+void SpawnGhost(uint32_t shooterID);
 
 int ScreenX(float worldX);
 int ScreenY(float worldY);
@@ -96,6 +101,7 @@ bool IsHitboxOverlap(uint32_t a, uint32_t b);
 
 // support functions - cleaning
 void ClearMapTextures();
+void ClearItemTextures();
 void ClearHeroTextures();
-void ClearSpiderTextures();
+void ClearEnemyTextures();
 

@@ -1,12 +1,16 @@
 #pragma once
 #include <windows.h>
 
-// animations sprites
+// map 
 extern HBITMAP hTexWall;
 extern HBITMAP hTexGrass;
 extern HBITMAP hTexPortal;
+
+// items
+extern HBITMAP hTexCoin;
+
+// hero
 extern HBITMAP hTexHero;
-extern HBITMAP hTexSpider;
 
 extern HBITMAP hTexHeroRightIdle;
 extern HBITMAP hTexHeroRightWalk[8];
@@ -30,4 +34,13 @@ extern HBITMAP hTexHeroUpDash;
 extern HBITMAP hTexHeroLeftDash;
 extern HBITMAP hTexHeroRightDash;
 
+// enemy
+extern HBITMAP hTexSpider;
 extern HBITMAP hTexSpiderHurt;
+
+extern HBITMAP hTexBat;
+extern HBITMAP hTexBatHurt;
+
+extern HBITMAP hTexNecromancer;
+extern HBITMAP hTexNecromancerHurt;
+extern HBITMAP hTexGhost;

@@ -6,6 +6,7 @@
 
 const int MAX_ENTITIES = 1000;
 
+
 // flags
 extern bool active[MAX_ENTITIES];
 extern bool hasPosition[MAX_ENTITIES];
@@ -20,6 +21,7 @@ extern bool hasAnimation[MAX_ENTITIES];
 extern bool hasHurtFlash[MAX_ENTITIES];
 extern bool hasKnockback[MAX_ENTITIES];
 extern bool hasDash[MAX_ENTITIES];
+extern bool hasLoot[MAX_ENTITIES];
 
 // structures
 struct Position { float x, y; };
@@ -31,6 +33,7 @@ struct Health { float hp, maxHp; };
 struct Weapon { float damage, cooldown, timer; };
 struct Direction { int facing; };
 struct HurtFlash { float timer; };
+struct Loot { int type; }; // 0 = золото (потом: 1 = зелье, 2 = апгрейд)
 struct Animation {
     HBITMAP frames[8];
     int frameCount;
@@ -80,6 +83,7 @@ extern Weapon weapons[MAX_ENTITIES];
 extern Direction directions[MAX_ENTITIES];
 extern Animation animations[MAX_ENTITIES];
 extern HurtFlash hurtFlashes[MAX_ENTITIES];
+extern Loot loots[MAX_ENTITIES];
 extern Knockback knockbacks[MAX_ENTITIES];
 extern Dash dashes[MAX_ENTITIES];
 
@@ -93,3 +97,6 @@ extern bool showGrid;
 extern bool mouseLeftDown;
 extern std::vector<Room> rooms;
 extern int map[MAP_H][MAP_W];
+extern int gold;
+extern int floorLevel;
+

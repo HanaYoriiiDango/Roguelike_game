@@ -63,23 +63,48 @@ void GenerateMap() {
 }
 void SpawnEntityInRooms() {
 
+    float hpMultiplier = 1.0f + (floorLevel - 1) * 0.3f;  // +30% HP за этаж
+    int enemiesPerRoom = 1 + (floorLevel - 1) / 2;        // +1 враг каждые 2 этажа
+
     for (int i = 1; i < rooms.size(); i++) {
-        int enemiesCount = 1 + rand() % 3;
+        int enemiesCount = 1 + rand() % enemiesPerRoom;
 
         for (int j = 0; j < enemiesCount; j++) {
-
             int tx = rooms[i].x + (rand() % rooms[i].w);
             int ty = rooms[i].y + (rand() % rooms[i].h);
 
             float spawnX = (tx + 0.5f) * TILE;
             float spawnY = (ty + 0.5f) * TILE;
 
-            uint32_t enemyID = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexSpider,
-                SPIDER_HITBOX_W, SPIDER_HITBOX_H, 0, SPIDER_HITBOX_OFFSET_Y);
-            hasAI[enemyID] = true;
-            ais[enemyID] = { 1, SPIDER_SPEED * 0.15f, SPIDER_AGGRO_RADIUS, 0, 0.0f, 0.0f };
-            hasHealth[enemyID] = true;
-            healths[enemyID] = { SPIDER_HP, SPIDER_HP };
+            int type = rand() % 3; // 0 = паук, 1 = мышь, 2 = некромант
+
+            if (type == 0) {
+                // Паук
+                uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexSpider,
+                    SPIDER_HITBOX_W, SPIDER_HITBOX_H, 0, SPIDER_HITBOX_OFFSET_Y);
+                hasAI[id] = true;
+                ais[id] = { 1, SPIDER_SPEED * 0.15f, SPIDER_AGGRO_RADIUS, 0, 0.0f, 0.0f };
+                hasHealth[id] = true;
+                healths[id] = { SPIDER_HP * hpMultiplier, SPIDER_HP * hpMultiplier };
+            }
+            else if (type == 1) {
+                // Мышь
+                uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexBat,
+                    BAT_HITBOX_W, BAT_HITBOX_H, 0, BAT_HITBOX_OFFSET_Y);
+                hasAI[id] = true;
+                ais[id] = { 2, BAT_SPEED * 0.15f, BAT_AGGRO_RADIUS, 0, 0.0f, 0.0f };
+                hasHealth[id] = true;
+                healths[id] = { BAT_HP * hpMultiplier, BAT_HP * hpMultiplier };
+            }
+            else {
+                // Некромант
+                uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexNecromancer,
+                    SHOOTER_HITBOX_W, SHOOTER_HITBOX_H, 0, SHOOTER_HITBOX_OFFSET_Y);
+                hasAI[id] = true;
+                ais[id] = { 3, 0, SHOOTER_AGGRO_RADIUS, 0, 0.0f, SHOOTER_SHOOT_COOLDOWN };
+                hasHealth[id] = true;
+                healths[id] = { SHOOTER_HP * hpMultiplier, SHOOTER_HP * hpMultiplier };
+            }
         }
     }
 }
@@ -108,6 +133,8 @@ void EntityInit() {
 
     hasDash[HeroID] = true;
     dashes[HeroID] = { 0, 0, 0, 0 };
+
+    gold = 0;
 
     SpawnEntityInRooms();
 }
@@ -198,9 +225,18 @@ void LoadHeroTextures() {
     LoadHeroAttack();
     LoadHeroDash();
 }
-void LoadSpiderTextures() {
+void LoadEnemyTextures() {
     hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexSpiderHurt = (HBITMAP)LoadImageW(NULL, L"spider_hurt.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexBat = (HBITMAP)LoadImageW(NULL, L"bat.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexBatHurt = (HBITMAP)LoadImageW(NULL, L"bat_hurt.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexNecromancer = (HBITMAP)LoadImageW(NULL, L"necromancer.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexNecromancerHurt = (HBITMAP)LoadImageW(NULL, L"necromancer_hurt.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexGhost = (HBITMAP)LoadImageW(NULL, L"soulball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+}
+void LoadItemTextures() {
+    hTexCoin = (HBITMAP)LoadImageW(NULL, L"gold.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
 }
 void CheckLoadHeroWalkTextures() {
@@ -297,21 +333,40 @@ void CheckLoadMapTextures() {
     }
 
 }
-void CheckLoadSpiderTextures() {
+void CheckLoadEnemyTextures() {
     if (!hTexSpider) {
         MessageBoxW(NULL, L"The textures didn’t load! --> spider.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
     if (!hTexSpiderHurt) {
         MessageBoxW(NULL, L"The textures didn’t load! --> spider_hurt.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
+    if (!hTexBat) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> bat.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexBatHurt) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> bat_hurt.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexNecromancer) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> necromancer.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexNecromancerHurt) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> necromancer_hurt.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+    if (!hTexGhost) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> soulball.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
+}
+void CheckLoadItemTextures() {
+    if (!hTexCoin) MessageBoxW(NULL, L"coin.bmp not found!", L"Error", MB_ICONERROR);
 
 }
 void CheckLoadTextures() {
     CheckLoadMapTextures();
     CheckLoadHeroIdleTextures();
     CheckLoadHeroWalkTextures();
+    CheckLoadItemTextures();
     CheckLoadAttackTextures();
-
+    CheckLoadEnemyTextures();
 }
 
 // entity
@@ -350,10 +405,9 @@ void SystemInput() {
     if (keys['R']) {
         RestartLevel();
         keys['R'] = false;
+        floorLevel = 1;
         return;
     }
-
-  
 
     UpdateHeroVelocity();
     UpdateHeroAnimation(velocities[HeroID].dx, velocities[HeroID].dy);
@@ -396,6 +450,78 @@ void SystemAI() {
             }
             else {
                 velocities[id] = { 0, 0 }; // stop!
+            }
+        }
+        else if (ais[id].type == 2) {
+            // Летучая мышь — орбита + рывок
+            float dx = positions[HeroID].x - positions[id].x;
+            float dy = positions[HeroID].y - positions[id].y;
+            float length = sqrt(dx * dx + dy * dy);
+
+            bool canSee = EnemyCanSeeHero(id);
+
+            if (canSee) {
+                // Первый раз увидел — начинаем с орбиты
+                if (ais[id].state == 0) {
+                    ais[id].state = 1; // Орбита
+                    ais[id].timer = 120.0f; // 2 секунды орбиты
+                }
+            }
+
+            if (ais[id].state == 1) {
+                // ОРБИТА вокруг игрока
+                static float orbitTime = 0;
+                orbitTime += 0.1f;
+
+                float orbitRadius = 150.0f; // Радиус орбиты
+                float orbitX = positions[HeroID].x + cos(orbitTime) * orbitRadius;
+                float orbitY = positions[HeroID].y + sin(orbitTime) * orbitRadius;
+
+                float targetDx = orbitX - positions[id].x;
+                float targetDy = orbitY - positions[id].y;
+                float targetLen = sqrt(targetDx * targetDx + targetDy * targetDy);
+
+                if (targetLen > 1.0f) {
+                    velocities[id].dx = (targetDx / targetLen) * ais[id].speed;
+                    velocities[id].dy = (targetDy / targetLen) * ais[id].speed;
+                }
+
+                // Таймер орбиты
+                ais[id].timer -= 1.0f;
+                if (ais[id].timer <= 0) {
+                    ais[id].state = 2; // Рывок
+                    ais[id].timer = 20.0f; // 20 кадров рывка
+                }
+            }
+            else if (ais[id].state == 2) {
+                // РЫВОК к игроку
+                if (length > 1.0f) {
+                    float dashSpeed = ais[id].speed * 6.0f; // В 4 раза быстрее
+                    velocities[id].dx = (dx / length) * dashSpeed;
+                    velocities[id].dy = (dy / length) * dashSpeed;
+                }
+
+                ais[id].timer -= 1.0f;
+                if (ais[id].timer <= 0) {
+                    ais[id].state = 1; // Возврат к орбите
+                    ais[id].timer = 120.0f;
+                }
+            }
+            else {
+                velocities[id] = { 0, 0 };
+            }
+
+        }
+        else if (ais[id].type == 3) {
+            // Некромант — стоит и стреляет
+            velocities[id] = { 0, 0 };
+
+            if (EnemyCanSeeHero(id)) {
+                ais[id].timer -= 1.0f;
+                if (ais[id].timer <= 0) {
+                    SpawnGhost(id);
+                    ais[id].timer = SHOOTER_SHOOT_COOLDOWN;
+                }
             }
         }
     }
@@ -527,6 +653,7 @@ void SystemMovement() {
 void SystemCombat() {
     HeroAttack();
     EnemyAttackHero();
+    GhostHitHero();
 }
 void SystemAnimation() {
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
@@ -535,14 +662,39 @@ void SystemAnimation() {
     }
 }
 void SystemDeath() {
+    // Проверка смерти героя
     if (hasHealth[HeroID] && healths[HeroID].hp <= 0) {
         RestartLevel();
+        floorLevel = 1;
+
         return;
     }
 
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) continue;
+        if (id == HeroID) continue; // Герой не умирает
+
         if (hasHealth[id] && healths[id].hp <= 0) {
+            // === СПАВН МОНЕТ (ТОЛЬКО ЗДЕСЬ) ===
+            int coinsCount = 1 + rand() % 3;
+            for (int i = 0; i < coinsCount; i++) {
+                float offsetX = (rand() % 40) - 20;
+                float offsetY = (rand() % 40) - 20;
+
+                uint32_t coinID = SpawnEntity(
+                    positions[id].x + offsetX,
+                    positions[id].y + offsetY,
+                    16, 16, hTexCoin,
+                    16, 16, 0, 0
+                );
+
+                if (coinID != -1) { // Проверка на переполнение
+                    hasLoot[coinID] = true;
+                    loots[coinID] = { 0 };
+                }
+            }
+
+            // === УДАЛЕНИЕ ВРАГА ===
             active[id] = false;
             hasPosition[id] = false;
             hasVelocity[id] = false;
@@ -613,6 +765,29 @@ void SystemPortal() {
     if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
         if (map[ty][tx] == TILE_PORTAL) {
             RestartLevel();
+            floorLevel++;
+        }
+    }
+}
+void SystemLoot() {
+    if (!hasCollider[HeroID] || !hasPosition[HeroID]) return;
+
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasLoot[id] || !hasCollider[id] || !hasPosition[id]) continue;
+
+        if (IsHitboxOverlap(id, HeroID)) {
+            if (loots[id].type == 0) {
+                gold += 1;
+                // Звук подбора (опционально)
+                // PlaySoundW(L"coin.wav", NULL, SND_FILENAME | SND_ASYNC);
+            }
+
+            // Удаляем монету
+            active[id] = false;
+            hasPosition[id] = false;
+            hasRenderable[id] = false;
+            hasCollider[id] = false;
+            hasLoot[id] = false;
         }
     }
 }
@@ -636,8 +811,9 @@ void SystemRender() {
     }
 
     // HUD
-    wchar_t buf[64];
-    swprintf_s(buf, L"HP: %.0f", healths[HeroID].hp);
+    wchar_t buf[128];
+    swprintf_s(buf, L"HP: %.0f  Gold: %d  DMG: %.0f  Floor: %d",
+        healths[HeroID].hp, gold, weapons[HeroID].damage, floorLevel);
     SetTextColor(window.mem_dc, RGB(255, 255, 255));
     SetBkMode(window.mem_dc, TRANSPARENT);
     TextOutW(window.mem_dc, 20, 20, buf, wcslen(buf));
@@ -784,8 +960,11 @@ void DrawEntity(uint32_t id) {
 
     // 1. Вспышка урона (для врагов — красный спрайт)
     if (hasHurtFlash[id] && hurtFlashes[id].timer > 0) {
-        if (id != HeroID && hasRenderable[id]) {
-            bmp = hTexSpiderHurt;
+        if (id != HeroID && hasAI[id]) {
+            // Определяем тип врага и подменяем спрайт
+            if (ais[id].type == 1) bmp = hTexSpiderHurt;       // Паук
+            else if (ais[id].type == 2) bmp = hTexBatHurt;     // Мышь
+            else if (ais[id].type == 3) bmp = hTexNecromancerHurt; 
         }
     }
 
@@ -844,7 +1023,8 @@ void InitWindow() {
 void LoadBMP() {
     LoadMapTextures();
     LoadHeroTextures();
-    LoadSpiderTextures();
+    LoadEnemyTextures();
+    LoadItemTextures();
 
     CheckLoadTextures();
 
@@ -871,6 +1051,7 @@ void ProcessGame() {
     SystemCombat();
     SystemAnimation();
     SystemHurtFlash();
+    SystemLoot();
     SystemPortal();
     SystemDeath();
     UpdateCamera();
@@ -885,13 +1066,14 @@ void ShowGame() {
     BitBlt(window.hdc, 0, 0, window.width, window.height, window.mem_dc, 0, 0, SRCCOPY);
 
     SelectObject(window.mem_dc, hOldBmp);
-    DeleteObject(hOldBmp);
+    DeleteObject(hMemBmp);
     DeleteDC(window.mem_dc);
 }
 void ClearGame() {
     ClearMapTextures();
     ClearHeroTextures();
-    ClearSpiderTextures();
+    ClearEnemyTextures();
+    ClearItemTextures();
 }
 void RestartLevel() {
     // 1. Очистить все сущности
@@ -913,6 +1095,7 @@ void RestartLevel() {
 
     // 2. Очистить комнаты и карту
     rooms.clear();
+    gold = 0;
 
     // 3. Пересоздать
     GenerateMap();
@@ -1108,6 +1291,8 @@ void HeroAttack() {
     ApplyHeroDamage();
 }
 void EnemyAttackHero() {
+    float dmgMultiplier = 1.0f + (floorLevel - 1) * 0.2f; // +20% урона за этаж
+
     if (!hasHealth[HeroID] || !hasPosition[HeroID]) return;
 
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
@@ -1120,7 +1305,8 @@ void EnemyAttackHero() {
             // Неуязвимость во время дэша
             if (hasDash[HeroID] && dashes[HeroID].timer > 0) continue;
 
-            healths[HeroID].hp -= SPIDER_DAMAGE;
+            float spiderDamage = SPIDER_DAMAGE * dmgMultiplier;
+            healths[HeroID].hp -= spiderDamage;
             ais[id].attackTimer = SPIDER_ATTACK_COOLDOWN;
         }
     }
@@ -1162,6 +1348,62 @@ bool EnemyCanSeeHero(uint32_t id) {
     float length = sqrt(dx * dx + dy * dy);
     return (length < ais[id].aggroRadius)
         && !IsWallBetween(positions[id].x, positions[id].y, positions[HeroID].x, positions[HeroID].y);
+}
+void GhostHitHero() {
+
+    float dmgMultiplier = 1.0f + (floorLevel - 1) * 0.2f; // +20% урона за этаж
+
+
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        if (!active[id] || !hasAI[id]) continue;
+        if (ais[id].type != 4) continue; // Призрак
+
+        if (IsHitboxOverlap(id, HeroID)) {
+            // Неуязвимость во время дэша
+            if (hasDash[HeroID] && dashes[HeroID].timer > 0) continue;
+
+            float ghostDamage = GHOST_DAMAGE * dmgMultiplier;
+            healths[HeroID].hp -= ghostDamage;
+
+            // Удаляем призрака
+            active[id] = false;
+            hasAI[id] = false;
+            hasPosition[id] = false;
+            hasVelocity[id] = false;
+            hasRenderable[id] = false;
+            hasCollider[id] = false;
+            hasHealth[id] = false;
+        }
+    }
+}
+void SpawnGhost(uint32_t shooterID) {
+    // Направление к герою
+    float dx = positions[HeroID].x - positions[shooterID].x;
+    float dy = positions[HeroID].y - positions[shooterID].y;
+    float len = sqrt(dx * dx + dy * dy);
+    if (len < 0.001f) return;
+
+    dx /= len;
+    dy /= len;
+
+    // Спавн призрака
+    uint32_t ghostID = SpawnEntity(
+        positions[shooterID].x,
+        positions[shooterID].y,
+        32, 32, hTexGhost,
+        GHOST_HITBOX_W, GHOST_HITBOX_H, 0, 0
+    );
+
+    hasVelocity[ghostID] = true;
+    velocities[ghostID].dx = dx * GHOST_SPEED * 0.15f;
+    velocities[ghostID].dy = dy * GHOST_SPEED * 0.15f;
+
+    hasAI[ghostID] = true;
+    ais[ghostID] = { 4, 0, 0, 0, 0, 0 };
+
+    hasHealth[ghostID] = true;
+    healths[ghostID] = { 1.0f, 1.0f };
+
 }
 
 int ScreenX(float worldX) { return (int)((worldX - camera.x) * ZOOM); }
@@ -1237,6 +1479,11 @@ void ClearMapTextures() {
     DeleteObject(hTexGrass);
     DeleteObject(hTexPortal);
 }
+void ClearItemTextures() {
+    DeleteObject(hTexCoin);
+
+
+}
 void ClearHeroTextures() {
     DeleteObject(hTexHero);
     DeleteObject(hTexHeroRightIdle);
@@ -1264,7 +1511,15 @@ void ClearHeroTextures() {
 
 
 }
-void ClearSpiderTextures() {
+void ClearEnemyTextures() {
     DeleteObject(hTexSpider);
     DeleteObject(hTexSpiderHurt);
+
+    DeleteObject(hTexBat);
+    DeleteObject(hTexBatHurt);
+
+    DeleteObject(hTexNecromancer);
+    DeleteObject(hTexNecromancerHurt);
+    DeleteObject(hTexGhost);
+
 }

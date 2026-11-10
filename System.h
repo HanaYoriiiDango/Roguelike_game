@@ -21,6 +21,7 @@ void LoadMapTextures();
 void LoadHeroIdle();
 void LoadHeroWalk();
 void LoadHeroAttack();
+void LoadHeroDash();
 void LoadHeroTextures();
 void LoadSpiderTextures();
 void CheckLoadHeroWalkTextures();
@@ -46,6 +47,8 @@ void SystemDeath();
 void UpdateCamera();
 void SystemHurtFlash();
 void SystemKnockback();
+void SystemPortal();
+
 
 // render
 void SystemRender();
@@ -63,6 +66,7 @@ void InitGame();
 void ProcessGame();
 void ShowGame();
 void ClearGame();
+void RestartLevel();
 
 // support functions 
 bool IsAttackHit(uint32_t enemyID);

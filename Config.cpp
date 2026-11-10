@@ -2,3 +2,4 @@
 // Config.cpp
 
 float ZOOM = 4.0f;
+int gold = 0;

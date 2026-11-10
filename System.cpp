@@ -51,7 +51,15 @@ void GenerateMap() {
         for (int y = cy1; y != cy2; y += stepY) {
             map[y][cx2] = 0;
         }
+
+        // Портал в последней комнате
+        Room lastRoom = rooms[rooms.size() - 1];
+        int portalX = lastRoom.x + lastRoom.w / 2;
+        int portalY = lastRoom.y + lastRoom.h / 2;
+        map[portalY][portalX] = TILE_PORTAL;
     }
+
+
 }
 void SpawnEntityInRooms() {
 
@@ -108,7 +116,7 @@ void EntityInit() {
 void LoadMapTextures() {
     hTexWall = (HBITMAP)LoadImageW(NULL, L"wall_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexGrass = (HBITMAP)LoadImageW(NULL, L"grass_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-
+    hTexPortal = (HBITMAP)LoadImageW(NULL, L"portal_tile64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 }
 void LoadHeroIdle() {
     hTexHeroRightIdle = (HBITMAP)LoadImageW(NULL, L"hero_right_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -176,11 +184,19 @@ void LoadHeroAttack() {
     hTexHeroRightAttack[3] = (HBITMAP)LoadImageW(NULL, L"right_attack4.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
 }
+void LoadHeroDash() {
+    hTexHeroDownDash = (HBITMAP)LoadImageW(NULL, L"hero_down_dash.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroUpDash = (HBITMAP)LoadImageW(NULL, L"hero_up_dash.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroLeftDash = (HBITMAP)LoadImageW(NULL, L"hero_left_dash.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexHeroRightDash = (HBITMAP)LoadImageW(NULL, L"hero_right_dash.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
+}
 void LoadHeroTextures() {
     hTexHero = (HBITMAP)LoadImageW(NULL, L"fiol_girl64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     LoadHeroIdle();
     LoadHeroWalk();
     LoadHeroAttack();
+    LoadHeroDash();
 }
 void LoadSpiderTextures() {
     hTexSpider = (HBITMAP)LoadImageW(NULL, L"spider64px.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -276,7 +292,9 @@ void CheckLoadMapTextures() {
     if (!hTexGrass) {
         MessageBoxW(NULL, L"The textures didn’t load! --> grass.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
-
+    if (!hTexPortal) {
+        MessageBoxW(NULL, L"The textures didn’t load! --> portal.bmp", L"Error:LoadBMP", MB_ICONERROR);
+    }
 
 }
 void CheckLoadSpiderTextures() {
@@ -328,6 +346,14 @@ uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitB
 void SystemInput() {
     if (keys['G']) { showGrid = !showGrid; keys['G'] = false; }
     if (keys[VK_ESCAPE]) DestroyWindow(window.hwnd);
+
+    if (keys['R']) {
+        RestartLevel();
+        keys['R'] = false;
+        return;
+    }
+
+  
 
     UpdateHeroVelocity();
     UpdateHeroAnimation(velocities[HeroID].dx, velocities[HeroID].dy);
@@ -382,47 +408,74 @@ void SystemDash() {
         dashes[HeroID].cooldownTimer -= 1.0f;
     }
 
-    // 2. Активация (по Shift)
+    // 2. Активация (по Space)
     if (keys[VK_SPACE] && dashes[HeroID].cooldownTimer <= 0 && dashes[HeroID].timer <= 0) {
-        // Направление дэша — из текущего движения
         float dx = 0, dy = 0;
         float speed = HERO_SPEED * 0.15f;
+        PlaySoundW(L"whoosh.wav", NULL, SND_FILENAME | SND_ASYNC);
 
-        if (keys['W']) dy -= speed;
-        if (keys['S']) dy += speed;
-        if (keys['A']) dx -= speed;
-        if (keys['D']) dx += speed;
+        if (keys['W']) dy -= 1;
+        if (keys['S']) dy += 1;
+        if (keys['A']) dx -= 1;
+        if (keys['D']) dx += 1;
 
-        // Нормализация (если диагональ)
+        float len = sqrt(dx * dx + dy * dy);
+        if (len > 0) {
+            dx /= len;
+            dy /= len;
+        }
+
         if (dx != 0 && dy != 0) {
             dx *= 0.7071f;
             dy *= 0.7071f;
         }
 
-        // Если стоим — дэш в направлении взгляда
         if (dx == 0 && dy == 0) {
             int facing = directions[HeroID].facing;
-            if (facing == 0) dy = 1;       // Down
-            else if (facing == 1) dy = -1; // Up
-            else if (facing == 2) dx = -1; // Left
-            else if (facing == 3) dx = 1;  // Right
+            if (facing == 0) dy = 1;
+            else if (facing == 1) dy = -1;
+            else if (facing == 2) dx = -1;
+            else if (facing == 3) dx = 1;
         }
 
-        // Запуск дэша
         dashes[HeroID].timer = DASH_DURATION;
         dashes[HeroID].cooldownTimer = DASH_COOLDOWN;
         dashes[HeroID].dx = dx;
         dashes[HeroID].dy = dy;
+
+        // Анимация дэша
+        animations[HeroID].state = 3;
+        animations[HeroID].frameCount = 1;
+        animations[HeroID].currentFrame = 0;
+        animations[HeroID].frameTimer = 0.0f;
+
+        int facing = directions[HeroID].facing;
+        if (facing == 0) animations[HeroID].frames[0] = hTexHeroDownDash;
+        else if (facing == 1) animations[HeroID].frames[0] = hTexHeroUpDash;
+        else if (facing == 2) animations[HeroID].frames[0] = hTexHeroLeftDash;
+        else if (facing == 3) animations[HeroID].frames[0] = hTexHeroRightDash;
     }
 
-    // 3. Применение (перезаписываем velocity)
+    // 3. Применение дэша (перезаписываем velocity)
     if (dashes[HeroID].timer > 0) {
         dashes[HeroID].timer -= 1.0f;
 
-        // Дэш в 5 раз быстрее
         float multiplier = DASH_SPEED / (HERO_SPEED * 0.15f);
         velocities[HeroID].dx = dashes[HeroID].dx * multiplier;
         velocities[HeroID].dy = dashes[HeroID].dy * multiplier;
+
+        // Когда дэш закончился — возвращаем idle
+        if (dashes[HeroID].timer <= 0 && animations[HeroID].state == 3) {
+            animations[HeroID].state = 0;
+            animations[HeroID].currentFrame = 0;
+            animations[HeroID].frameCount = 1;
+
+            int facing = directions[HeroID].facing;
+            if (facing == 0) animations[HeroID].frames[0] = hTexHeroDownIdle;
+            else if (facing == 1) animations[HeroID].frames[0] = hTexHeroUpIdle;
+            else if (facing == 2) animations[HeroID].frames[0] = hTexHeroLeftIdle;
+            else if (facing == 3) animations[HeroID].frames[0] = hTexHeroRightIdle;
+        }
     }
 }
 void SystemMovement() {
@@ -482,6 +535,11 @@ void SystemAnimation() {
     }
 }
 void SystemDeath() {
+    if (hasHealth[HeroID] && healths[HeroID].hp <= 0) {
+        RestartLevel();
+        return;
+    }
+
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) continue;
         if (hasHealth[id] && healths[id].hp <= 0) {
@@ -540,6 +598,21 @@ void SystemKnockback() {
             if (knockbacks[id].timer <= 0) {
                 hasKnockback[id] = false;
             }
+        }
+    }
+}
+void SystemPortal() {
+    if (!hasPosition[HeroID] || !hasCollider[HeroID]) return;
+
+    float hx = positions[HeroID].x + colliders[HeroID].offsetX;
+    float hy = positions[HeroID].y + colliders[HeroID].offsetY;
+
+    int tx = (int)(hx / TILE);
+    int ty = (int)(hy / TILE);
+
+    if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+        if (map[ty][tx] == TILE_PORTAL) {
+            RestartLevel();
         }
     }
 }
@@ -694,7 +767,10 @@ void ShowMap() {
             int sx = ScreenX(tx * TILE);
             int sy = ScreenY(ty * TILE);
 
-            HBITMAP tex = (map[ty][tx] == 1) ? hTexWall : hTexGrass;
+            HBITMAP tex;
+            if (map[ty][tx] == TILE_WALL) tex = hTexWall;
+            else if (map[ty][tx] == TILE_PORTAL) tex = hTexPortal;
+            else tex = hTexGrass;
 
             ShowSprite(sx, sy, size, size, tex, false);
         }
@@ -795,6 +871,7 @@ void ProcessGame() {
     SystemCombat();
     SystemAnimation();
     SystemHurtFlash();
+    SystemPortal();
     SystemDeath();
     UpdateCamera();
 }
@@ -815,6 +892,31 @@ void ClearGame() {
     ClearMapTextures();
     ClearHeroTextures();
     ClearSpiderTextures();
+}
+void RestartLevel() {
+    // 1. Очистить все сущности
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        active[id] = false;
+        hasPosition[id] = false;
+        hasVelocity[id] = false;
+        hasRenderable[id] = false;
+        hasCollider[id] = false;
+        hasHealth[id] = false;
+        hasAI[id] = false;
+        hasWeapon[id] = false;
+        hasDirection[id] = false;
+        hasAnimation[id] = false;
+        hasDash[id] = false;
+        hasHurtFlash[id] = false;
+        hasKnockback[id] = false;
+    }
+
+    // 2. Очистить комнаты и карту
+    rooms.clear();
+
+    // 3. Пересоздать
+    GenerateMap();
+    EntityInit();
 }
 
 // support functions - logic
@@ -923,6 +1025,7 @@ void SetHeroAnimationFrames(int targetState) {
 void UpdateHeroAnimation(float dx, float dy) {
     if (!hasAnimation[HeroID]) return;
     if (animations[HeroID].state == 2) return; // Атака идёт — не трогаем
+    if (animations[HeroID].state == 3) return;
 
     bool isMoving = (dx != 0 || dy != 0);
     int targetState = isMoving ? 1 : 0;
@@ -1038,6 +1141,7 @@ void EndAttack(uint32_t id) {
 void UpdateAnimationFrame(uint32_t id) {
     Animation& anim = animations[id];
     if (anim.frameCount <= 1) return;
+    if (anim.state == 3) return;
 
     anim.frameTimer += 1.0f;
     if (anim.frameTimer < anim.frameDuration) return;
@@ -1131,6 +1235,7 @@ bool IsHitboxOverlap(uint32_t a, uint32_t b) {
 void ClearMapTextures() {
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);
+    DeleteObject(hTexPortal);
 }
 void ClearHeroTextures() {
     DeleteObject(hTexHero);
@@ -1138,6 +1243,10 @@ void ClearHeroTextures() {
     DeleteObject(hTexHeroLeftIdle);
     DeleteObject(hTexHeroUpIdle);
     DeleteObject(hTexHeroDownIdle);
+    DeleteObject(hTexHeroDownDash);
+    DeleteObject(hTexHeroUpDash);
+    DeleteObject(hTexHeroLeftDash);
+    DeleteObject(hTexHeroRightDash);
 
     for (int i = 0; i < WALK_FRAME_COUNT; i++) {
         if (hTexHeroRightWalk[i]) DeleteObject(hTexHeroRightWalk[i]);
@@ -1152,6 +1261,8 @@ void ClearHeroTextures() {
         if (hTexHeroLeftAttack[i]) DeleteObject(hTexHeroLeftAttack[i]);
         if (hTexHeroRightAttack[i]) DeleteObject(hTexHeroRightAttack[i]);
     }
+
+
 }
 void ClearSpiderTextures() {
     DeleteObject(hTexSpider);

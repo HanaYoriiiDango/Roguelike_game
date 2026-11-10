@@ -111,6 +111,17 @@ LRESULT CALLBACK WndProc(
 
     case WM_KEYDOWN: 
         keys[wParam] = true;
+
+        // Зум на + и -
+        if (wParam == VK_OEM_PLUS || wParam == VK_ADD) {
+            ZOOM += 0.2f;
+            if (ZOOM > 10.0f) ZOOM = 10.0f;
+        }
+        if (wParam == VK_OEM_MINUS || wParam == VK_SUBTRACT) {
+            ZOOM -= 0.2f;
+            if (ZOOM < 1.0f) ZOOM = 1.0f;
+        }
+
         InvalidateRect(hwnd, NULL, TRUE);
 
         break;
@@ -126,6 +137,8 @@ LRESULT CALLBACK WndProc(
 
         if (ZOOM < 1.0f) ZOOM = 1.0f;
         if (ZOOM > 10.0f) ZOOM = 10.0f;
+
+       
 
         return 0;
     }

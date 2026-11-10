@@ -4,11 +4,7 @@
 #include <vector>
 #include "Config.h"
 
-
 const int MAX_ENTITIES = 1000;
-
-
-
 
 // flags
 extern bool active[MAX_ENTITIES];

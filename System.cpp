@@ -52,20 +52,19 @@ void GenerateMap() {
             map[y][cx2] = 0;
         }
 
-        // Портал в последней комнате
+        
         Room lastRoom = rooms[rooms.size() - 1];
         int portalX = lastRoom.x + lastRoom.w / 2;
         int portalY = lastRoom.y + lastRoom.h / 2;
         map[portalY][portalX] = TILE_PORTAL;
     }
 
-    // Подсказки в центре первой комнаты
+    
     Room firstRoom = rooms[0];
     int centerX = firstRoom.x + firstRoom.w / 2;
     int centerY = firstRoom.y + firstRoom.h / 2;
 
-    // Ставим 3 подсказки в ряд по центру (горизонтально)
-    // WASD — слева, Space — центр, ЛКМ — справа
+    
     if (centerY > 0 && centerY < MAP_H - 1) {
         if (centerX - 1 > 0 && centerX - 1 < MAP_W - 1) map[centerY][centerX - 1] = TILE_WASD;
         if (centerX > 0 && centerX < MAP_W - 1) map[centerY][centerX] = TILE_SPACE;
@@ -75,8 +74,8 @@ void GenerateMap() {
 }
 void SpawnEntityInRooms() {
 
-    float hpMultiplier = 1.0f + (floorLevel - 1) * 0.3f;  // +30% HP за этаж
-    int enemiesPerRoom = 1 + (floorLevel - 1) / 2;        // +1 враг каждые 2 этажа
+    float hpMultiplier = 1.0f + (floorLevel - 1) * 0.3f;  // +30% HP
+    int enemiesPerRoom = 1 + (floorLevel - 1) / 2;        
 
     for (int i = 1; i < rooms.size(); i++) {
         int enemiesCount = 1 + rand() % enemiesPerRoom;
@@ -88,10 +87,10 @@ void SpawnEntityInRooms() {
             float spawnX = (tx + 0.5f) * TILE;
             float spawnY = (ty + 0.5f) * TILE;
 
-            int type = rand() % 3; // 0 = паук, 1 = мышь, 2 = некромант
+            int type = rand() % 3; 
 
             if (type == 0) {
-                // Паук
+                // spider
                 uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexSpider,
                     SPIDER_HITBOX_W, SPIDER_HITBOX_H, 0, SPIDER_HITBOX_OFFSET_Y);
                 hasAI[id] = true;
@@ -100,7 +99,7 @@ void SpawnEntityInRooms() {
                 healths[id] = { SPIDER_HP * hpMultiplier, SPIDER_HP * hpMultiplier };
             }
             else if (type == 1) {
-                // Мышь
+                // bat
                 uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexBat,
                     BAT_HITBOX_W, BAT_HITBOX_H, 0, BAT_HITBOX_OFFSET_Y);
                 hasAI[id] = true;
@@ -109,7 +108,7 @@ void SpawnEntityInRooms() {
                 healths[id] = { BAT_HP * hpMultiplier, BAT_HP * hpMultiplier };
             }
             else {
-                // Некромант
+                // necromancer
                 uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexNecromancer,
                     SHOOTER_HITBOX_W, SHOOTER_HITBOX_H, 0, SHOOTER_HITBOX_OFFSET_Y);
                 hasAI[id] = true;
@@ -133,7 +132,7 @@ void EntityInit() {
     weapons[HeroID] = { HERO_DAMAGE, HERO_ATTACK_COOLDOWN, 0.0f };
 
     hasDirection[HeroID] = true;
-    directions[HeroID].facing = 0; // Смотрит вниз по умолчанию
+    directions[HeroID].facing = 0; // down
 
     hasAnimation[HeroID] = true;
     animations[HeroID].frameCount = 1;
@@ -141,28 +140,28 @@ void EntityInit() {
     animations[HeroID].frameTimer = 0.0f;
     animations[HeroID].frameDuration = 8.0f; // Скорость смены кадров
     animations[HeroID].state = 0; // 0 = idle
-    animations[HeroID].frames[0] = hTexHero; // Пока дефолтный спрайт
+    animations[HeroID].frames[0] = hTexHero; // defolt sprite
 
     hasDash[HeroID] = true;
     dashes[HeroID] = { 0, 0, 0, 0 };
 
-    // Спавн 3 зелий с отступом
+    // potions
     float spacing = 100.0f;
 
-    // HP зелье (слева)
+    // HP potion
     uint32_t hpID = SpawnEntity(startX - spacing, startY - 100.0f, 32, 32, hTexHpPotion, 24, 24, 0, 0);
     hasShopItem[hpID] = true;
-    shopItems[hpID] = { 0, GetShopPrice(SHOP_BASE_PRICE) };  // HP // HP, цена 5
+    shopItems[hpID] = { 0, GetShopPrice(SHOP_BASE_PRICE) };  // price 5
 
-    // DMG зелье (центр)
+    // DMG potion
     uint32_t dmgID = SpawnEntity(startX, startY - 100.0f, 32, 32, hTexDamagePotion, 24, 24, 0, 0);
     hasShopItem[dmgID] = true;
-    shopItems[dmgID] = { 1, GetShopPrice(SHOP_BASE_PRICE) }; // DMG, цена 5
+    shopItems[dmgID] = { 1, GetShopPrice(SHOP_BASE_PRICE) }; // price 5
 
-    // Speed зелье (справа)
+    // Speed potion
     uint32_t spdID = SpawnEntity(startX + spacing, startY - 100.0f, 32, 32, hTexSpeedPotion, 24, 24, 0, 0);
     hasShopItem[spdID] = true;
-    shopItems[spdID] = { 2, GetShopPrice(SHOP_BASE_PRICE) }; // SPEED, цена 5
+    shopItems[spdID] = { 2, GetShopPrice(SHOP_BASE_PRICE) }; // price 5
 
     SpawnEntityInRooms();
 }
@@ -452,6 +451,7 @@ void SystemInput() {
         RestartLevel();
         keys['R'] = false;
         floorLevel = 1;
+        gold = 0;
         speedMultiplier = 1.0f; // Сброс скорости
 
         return;
@@ -577,12 +577,12 @@ void SystemAI() {
 void SystemDash() {
     if (!hasDash[HeroID]) return;
 
-    // 1. Кулдаун (уменьшается всегда)
+    // cooldown
     if (dashes[HeroID].cooldownTimer > 0) {
         dashes[HeroID].cooldownTimer -= 1.0f;
     }
 
-    // 2. Активация (по Space)
+    // start dash - space
     if (keys[VK_SPACE] && dashes[HeroID].cooldownTimer <= 0 && dashes[HeroID].timer <= 0) {
         float dx = 0, dy = 0;
         float speed = HERO_SPEED * 0.15f;
@@ -617,7 +617,7 @@ void SystemDash() {
         dashes[HeroID].dx = dx;
         dashes[HeroID].dy = dy;
 
-        // Анимация дэша
+        // animations
         animations[HeroID].state = 3;
         animations[HeroID].frameCount = 1;
         animations[HeroID].currentFrame = 0;
@@ -630,7 +630,7 @@ void SystemDash() {
         else if (facing == 3) animations[HeroID].frames[0] = hTexHeroRightDash;
     }
 
-    // 3. Применение дэша (перезаписываем velocity)
+    // dasf ACTIVADED 
     if (dashes[HeroID].timer > 0) {
         dashes[HeroID].timer -= 1.0f;
 
@@ -638,7 +638,7 @@ void SystemDash() {
         velocities[HeroID].dx = dashes[HeroID].dx * multiplier;
         velocities[HeroID].dy = dashes[HeroID].dy * multiplier;
 
-        // Когда дэш закончился — возвращаем idle
+        // return after dash
         if (dashes[HeroID].timer <= 0 && animations[HeroID].state == 3) {
             animations[HeroID].state = 0;
             animations[HeroID].currentFrame = 0;
@@ -721,10 +721,10 @@ void SystemDeath() {
 
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id]) continue;
-        if (id == HeroID) continue; // Герой не умирает
+        if (id == HeroID) continue; 
 
         if (hasHealth[id] && healths[id].hp <= 0) {
-            // === СПАВН МОНЕТ (ТОЛЬКО ЗДЕСЬ) ===
+            
             int coinsCount = 1 + rand() % 3;
             for (int i = 0; i < coinsCount; i++) {
                 float offsetX = (rand() % 40) - 20;
@@ -737,13 +737,13 @@ void SystemDeath() {
                     16, 16, 0, 0
                 );
 
-                if (coinID != -1) { // Проверка на переполнение
+                if (coinID != -1) { 
                     hasLoot[coinID] = true;
                     loots[coinID] = { 0 };
                 }
             }
 
-            // === УДАЛЕНИЕ ВРАГА ===
+            // clear
             active[id] = false;
             hasPosition[id] = false;
             hasVelocity[id] = false;

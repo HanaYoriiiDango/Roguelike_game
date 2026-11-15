@@ -11,6 +11,7 @@
 #pragma comment(lib, "Msimg32.lib")
 #pragma comment(lib, "Winmm.lib")
 
+
 // map generation 
 void GenerateMap();
 void SpawnEntityInRooms();

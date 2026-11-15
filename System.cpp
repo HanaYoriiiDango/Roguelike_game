@@ -1149,8 +1149,8 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
-    //mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    //mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
 
 }
 void ProcessGame() {

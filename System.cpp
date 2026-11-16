@@ -714,6 +714,7 @@ void SystemDeath() {
     if (hasHealth[HeroID] && healths[HeroID].hp <= 0) {
         RestartLevel();
         floorLevel = 1;
+        gold = 0;
         speedMultiplier = 1.0f; // Сброс скорости
 
         return;
@@ -1149,8 +1150,8 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
-    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    //mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    //mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
 
 }
 void ProcessGame() {

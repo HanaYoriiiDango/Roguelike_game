@@ -1,10 +1,4 @@
 ﻿#include <windows.h>
-//#include <algorithm>
-//#include <wingdi.h> 
-//#include <vector>
-//#include <cstdlib>
-//#include <ctime>
-//#include <cmath>
 #pragma comment(lib, "Msimg32.lib")
 #pragma comment(lib, "Winmm.lib")
 #include "Config.h"

@@ -1,11 +1,6 @@
 #pragma once
 #include "Components.h"
-#include "Config.h"
 #include "Textures.h"
-//#include <algorithm>
-//#include <wingdi.h> 
-#include <vector>
-#include <cstdlib>
 #include <ctime>
 #include <cmath>
 #pragma comment(lib, "Msimg32.lib")

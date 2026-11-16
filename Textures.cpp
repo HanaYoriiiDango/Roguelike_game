@@ -10,7 +10,6 @@ HBITMAP hTexLeftClickTile = NULL;
 
 // UI
 HBITMAP hTexUIHp = NULL;
-//HBITMAP hTexUIGold = NULL;
 HBITMAP hTexUIDmg = NULL;
 HBITMAP hTexUISpeed = NULL;
 HBITMAP hTexUIFloor = NULL;
@@ -24,6 +23,7 @@ HBITMAP hTexDamagePotion = NULL;
 
 // hero
 HBITMAP hTexHero = NULL;
+HBITMAP hTexHeroHurt = NULL;
 
 HBITMAP hTexHeroRightIdle = NULL;
 HBITMAP hTexHeroRightWalk[8] = { NULL };

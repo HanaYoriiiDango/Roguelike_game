@@ -11,7 +11,6 @@ extern HBITMAP hTexLeftClickTile;
 
 // UI
 extern HBITMAP hTexUIHp;
-//extern HBITMAP hTexUIGold;
 extern HBITMAP hTexUIDmg;
 extern HBITMAP hTexUISpeed;
 extern HBITMAP hTexUIFloor;
@@ -25,6 +24,7 @@ extern HBITMAP hTexDamagePotion;
 
 // hero
 extern HBITMAP hTexHero;
+extern HBITMAP hTexHeroHurt;
 
 extern HBITMAP hTexHeroRightIdle;
 extern HBITMAP hTexHeroRightWalk[8];

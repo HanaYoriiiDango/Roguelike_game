@@ -39,7 +39,7 @@ int APIENTRY wWinMain(
         0, 
         CLASS_NAME, 
         L"Roguelike prototype", 
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+        WS_POPUP | WS_MAXIMIZE, 0, 0,
         window.width, window.height, 
         NULL, NULL, hInstance, NULL
     );

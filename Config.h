@@ -14,6 +14,7 @@ const int TILE_SPACE = 4;
 const int TILE_LEFT_CLICK = 5;
 const int TILE_ZOOM = 6;
 const int TILE_RESTART = 7;
+const int TILE_QUIT = 8;
 
 // multiplicators
 const int SHOP_BASE_PRICE = 5;       // Базовая цена

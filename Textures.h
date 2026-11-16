@@ -10,6 +10,7 @@ extern HBITMAP hTexSpaceTile;
 extern HBITMAP hTexLeftClickTile;
 extern HBITMAP hTexZoomTile;
 extern HBITMAP hTexRestartTile;
+extern HBITMAP hTexQuitTile;
 
 // UI
 extern HBITMAP hTexUIHp;

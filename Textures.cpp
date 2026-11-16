@@ -9,6 +9,8 @@ HBITMAP hTexSpaceTile = NULL;
 HBITMAP hTexLeftClickTile = NULL;
 HBITMAP hTexZoomTile = NULL;
 HBITMAP hTexRestartTile = NULL;
+HBITMAP hTexQuitTile = NULL;
+
 
 // UI
 HBITMAP hTexUIHp = NULL;

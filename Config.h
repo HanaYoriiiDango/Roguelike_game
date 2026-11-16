@@ -4,8 +4,8 @@
 // zoom and map
 extern float ZOOM;
 const int TILE = 128;
-const int MAP_W = 64;
-const int MAP_H = 64;
+const int MAP_W = 128;
+const int MAP_H = 32;
 const int TILE_FLOOR = 0;
 const int TILE_WALL = 1;
 const int TILE_PORTAL = 2;

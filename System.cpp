@@ -83,6 +83,7 @@ void GenerateMap() {
         if (centerX > 0 && centerX < MAP_W - 1) map[centerY][centerX] = TILE_SPACE;
         if (centerX + 1 > 0 && centerX + 1 < MAP_W - 1) map[centerY][centerX + 1] = TILE_LEFT_CLICK;
         if (centerX + 1 > 0 && centerX + 1 < MAP_W - 1) map[centerY + 1][centerX - 1] = TILE_ZOOM;
+        if (centerX + 2 > 0 && centerX + 2 < MAP_W - 1) map[centerY + 1][centerX] = TILE_QUIT;
         if (centerX + 2 > 0 && centerX + 2 < MAP_W - 1) map[centerY + 1][centerX + 1] = TILE_RESTART;
     }
 
@@ -191,6 +192,8 @@ void LoadMapTextures() {
     hTexLeftClickTile = (HBITMAP)LoadImageW(NULL, L"attack_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexZoomTile = (HBITMAP)LoadImageW(NULL, L"zoom_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexRestartTile = (HBITMAP)LoadImageW(NULL, L"restart_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexQuitTile = (HBITMAP)LoadImageW(NULL, L"quit_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+
 }
 void LoadHeroIdle() {
     hTexHeroRightIdle = (HBITMAP)LoadImageW(NULL, L"hero_right_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -1142,6 +1145,7 @@ void ShowMap() {
             else if (map[ty][tx] == TILE_LEFT_CLICK) tex = hTexLeftClickTile;
             else if (map[ty][tx] == TILE_ZOOM) tex = hTexZoomTile;
             else if (map[ty][tx] == TILE_RESTART) tex = hTexRestartTile;
+            else if (map[ty][tx] == TILE_QUIT) tex = hTexQuitTile;
             else tex = hTexGrass;
 
             ShowSprite(sx, sy, size, size, tex, false);
@@ -1802,6 +1806,8 @@ void ClearMapTextures() {
     DeleteObject(hTexLeftClickTile);
     DeleteObject(hTexZoomTile);
     DeleteObject(hTexRestartTile);
+    DeleteObject(hTexQuitTile);
+    
 }
 void ClearItemTextures() {
     DeleteObject(hTexCoin);

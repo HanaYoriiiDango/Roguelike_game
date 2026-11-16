@@ -1127,7 +1127,7 @@ void ShowMap() {
     int startRow = max(0, (int)(camera.y / TILE));
     int endRow = min(MAP_H, (int)((camera.y + viewH) / TILE) + 1);
 
-    int size = (int)TILE * ZOOM;
+    int size = (int)TILE * ZOOM + 1;
 
     for (int ty = startRow; ty < endRow; ++ty) {
         for (int tx = startCol; tx < endCol; ++tx) {

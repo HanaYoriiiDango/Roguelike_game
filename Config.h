@@ -12,6 +12,8 @@ const int TILE_PORTAL = 2;
 const int TILE_WASD = 3;
 const int TILE_SPACE = 4;
 const int TILE_LEFT_CLICK = 5;
+const int TILE_ZOOM = 6;
+const int TILE_RESTART = 7;
 
 // multiplicators
 const int SHOP_BASE_PRICE = 5;       // Базовая цена
@@ -47,7 +49,7 @@ const float BAT_HITBOX_H = 16.0f;
 const float BAT_HITBOX_OFFSET_Y = 5.0f;
 
 // necromancer 
-const float SHOOTER_HP = 25.0f;
+const float SHOOTER_HP = 50.0f;
 const float SHOOTER_AGGRO_RADIUS = 600.0f;
 const float SHOOTER_SHOOT_COOLDOWN = 90.0f; // 1.5 сек
 const float SHOOTER_HITBOX_W = 24.0f;

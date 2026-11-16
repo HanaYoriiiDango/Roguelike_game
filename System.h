@@ -68,6 +68,7 @@ void ProcessGame();
 void ShowGame();
 void ClearGame();
 void RestartLevel();
+void NextFloor();
 
 // support functions 
 bool IsAttackHit(uint32_t enemyID);

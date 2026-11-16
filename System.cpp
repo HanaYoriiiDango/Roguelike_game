@@ -82,6 +82,8 @@ void GenerateMap() {
         if (centerX - 1 > 0 && centerX - 1 < MAP_W - 1) map[centerY][centerX - 1] = TILE_WASD;
         if (centerX > 0 && centerX < MAP_W - 1) map[centerY][centerX] = TILE_SPACE;
         if (centerX + 1 > 0 && centerX + 1 < MAP_W - 1) map[centerY][centerX + 1] = TILE_LEFT_CLICK;
+        if (centerX + 1 > 0 && centerX + 1 < MAP_W - 1) map[centerY + 1][centerX - 1] = TILE_ZOOM;
+        if (centerX + 2 > 0 && centerX + 2 < MAP_W - 1) map[centerY + 1][centerX + 1] = TILE_RESTART;
     }
 
 }
@@ -187,6 +189,8 @@ void LoadMapTextures() {
     hTexWasdTile = (HBITMAP)LoadImageW(NULL, L"wasd_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexSpaceTile = (HBITMAP)LoadImageW(NULL, L"dash_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexLeftClickTile = (HBITMAP)LoadImageW(NULL, L"attack_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexZoomTile = (HBITMAP)LoadImageW(NULL, L"zoom_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexRestartTile = (HBITMAP)LoadImageW(NULL, L"restart_tile.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 }
 void LoadHeroIdle() {
     hTexHeroRightIdle = (HBITMAP)LoadImageW(NULL, L"hero_right_idle.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -394,7 +398,8 @@ void CheckLoadMapTextures() {
     if (!hTexLeftClickTile) {
         MessageBoxW(NULL, L"The textures didn’t load! --> attack_tile.bmp", L"Error:LoadBMP", MB_ICONERROR);
     }
-   
+    if (!hTexZoomTile) MessageBoxW(NULL, L"zoom_tile.bmp not found!", L"Error", MB_ICONERROR);
+    if (!hTexRestartTile) MessageBoxW(NULL, L"restart_tile.bmp not found!", L"Error", MB_ICONERROR);
 }
 void CheckLoadEnemyTextures() {
     if (!hTexSpider) {
@@ -829,8 +834,7 @@ void SystemPortal() {
 
     if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
         if (map[ty][tx] == TILE_PORTAL) {
-            RestartLevel();
-            floorLevel++;
+            NextFloor();
         }
     }
 }
@@ -939,7 +943,7 @@ void DrawHUD() {
     int bgW = 600;
     int bgH = 80;
     int bgX = (window.width - bgW) / 2;
-    int bgY = window.height - bgH - 20;
+    int bgY = window.height - bgH - 60;
 
     // 1. Фон
     if (hTexUIBackground) {
@@ -968,7 +972,7 @@ void DrawHUD() {
     wchar_t hpText[32];
     swprintf_s(hpText, L"%.0f", healths[HeroID].hp);
     SetTextColor(window.mem_dc, RGB(255, 100, 100));
-    TextOutW(window.mem_dc, startX + iconSize + 5, textY, hpText, wcslen(hpText));
+    TextOutW(window.mem_dc, startX + iconSize + 20, textY, hpText, wcslen(hpText));
     startX += iconSize + spacing + 60;
 
     // Gold
@@ -976,7 +980,7 @@ void DrawHUD() {
     wchar_t goldText[32];
     swprintf_s(goldText, L"%d", gold);
     SetTextColor(window.mem_dc, RGB(255, 215, 0));
-    TextOutW(window.mem_dc, startX + iconSize + 5, textY, goldText, wcslen(goldText));
+    TextOutW(window.mem_dc, startX + iconSize + 20, textY, goldText, wcslen(goldText));
     startX += iconSize + spacing + 60;
 
     // DMG
@@ -984,7 +988,7 @@ void DrawHUD() {
     wchar_t dmgText[32];
     swprintf_s(dmgText, L"%.0f", weapons[HeroID].damage);
     SetTextColor(window.mem_dc, RGB(255, 150, 50));
-    TextOutW(window.mem_dc, startX + iconSize + 5, textY, dmgText, wcslen(dmgText));
+    TextOutW(window.mem_dc, startX + iconSize + 20, textY, dmgText, wcslen(dmgText));
     startX += iconSize + spacing + 60;
 
     // Speed
@@ -992,7 +996,7 @@ void DrawHUD() {
     wchar_t speedText[32];
     swprintf_s(speedText, L"%.0f%%", speedMultiplier * 100.0f);
     SetTextColor(window.mem_dc, RGB(150, 255, 150));
-    TextOutW(window.mem_dc, startX + iconSize + 5, textY, speedText, wcslen(speedText));
+    TextOutW(window.mem_dc, startX + iconSize + 20, textY, speedText, wcslen(speedText));
     startX += iconSize + spacing + 60;
 
     // Floor
@@ -1000,7 +1004,7 @@ void DrawHUD() {
     wchar_t floorText[32];
     swprintf_s(floorText, L"%d", floorLevel);
     SetTextColor(window.mem_dc, RGB(200, 200, 255));
-    TextOutW(window.mem_dc, startX + iconSize + 5, textY, floorText, wcslen(floorText));
+    TextOutW(window.mem_dc, startX + iconSize + 20, textY, floorText, wcslen(floorText));
 
     // 4. Восстановить старый шрифт
     SelectObject(window.mem_dc, oldFont);
@@ -1136,6 +1140,8 @@ void ShowMap() {
             else if (map[ty][tx] == TILE_WASD) tex = hTexWasdTile;
             else if (map[ty][tx] == TILE_SPACE) tex = hTexSpaceTile;
             else if (map[ty][tx] == TILE_LEFT_CLICK) tex = hTexLeftClickTile;
+            else if (map[ty][tx] == TILE_ZOOM) tex = hTexZoomTile;
+            else if (map[ty][tx] == TILE_RESTART) tex = hTexRestartTile;
             else tex = hTexGrass;
 
             ShowSprite(sx, sy, size, size, tex, false);
@@ -1313,6 +1319,85 @@ void RestartLevel() {
     // 4. Пересоздание
     GenerateMap();
     EntityInit();
+}
+void NextFloor() {
+    // 1. Сохранить статы героя
+    float savedHp = healths[HeroID].hp;
+    float savedMaxHp = healths[HeroID].maxHp;
+    float savedDamage = weapons[HeroID].damage;
+    float savedSpeed = speedMultiplier;
+
+    // 2. Очистка сущностей (без сброса статов)
+    for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
+        active[id] = false;
+        hasPosition[id] = false;
+        hasVelocity[id] = false;
+        hasRenderable[id] = false;
+        hasCollider[id] = false;
+        hasHealth[id] = false;
+        hasAI[id] = false;
+        hasWeapon[id] = false;
+        hasDirection[id] = false;
+        hasAnimation[id] = false;
+        hasDash[id] = false;
+        hasHurtFlash[id] = false;
+        hasKnockback[id] = false;
+        hasShopItem[id] = false;  
+        hasLoot[id] = false;
+
+    }
+
+    // 3. Очистка комнат
+    rooms.clear();
+
+    // 4. Увеличить этаж
+    floorLevel++;
+
+    // 5. Пересоздать карту (без сброса статов)
+    GenerateMap();
+
+    // 6. Спавн героя с сохранёнными статами
+    Room firstRoom = rooms[0];
+    float startX = (firstRoom.x + firstRoom.w / 2.0f) * TILE;
+    float startY = (firstRoom.y + firstRoom.h / 2.0f) * TILE;
+
+    HeroID = SpawnEntity(startX, startY, SPRITE_SIZE, SPRITE_SIZE, hTexHero,
+        HERO_HITBOX_W, HERO_HITBOX_H, 0, HERO_HITBOX_OFFSET_Y);
+    hasHealth[HeroID] = true;
+    healths[HeroID] = { savedHp, savedMaxHp };
+    hasWeapon[HeroID] = true;
+    weapons[HeroID] = { savedDamage, HERO_ATTACK_COOLDOWN, 0.0f };
+    hasDirection[HeroID] = true;
+    directions[HeroID].facing = 0;
+    hasAnimation[HeroID] = true;
+    animations[HeroID].frameCount = 1;
+    animations[HeroID].currentFrame = 0;
+    animations[HeroID].frameTimer = 0.0f;
+    animations[HeroID].frameDuration = 8.0f;
+    animations[HeroID].state = 0;
+    animations[HeroID].frames[0] = hTexHero;
+    hasDash[HeroID] = true;
+    dashes[HeroID] = { 0, 0, 0, 0 };
+
+    // 7. Восстановить скорость
+    speedMultiplier = savedSpeed;
+
+    // 8. Спавн врагов и зелий
+    SpawnEntityInRooms();
+
+    // 9. Спавн зелий (как в EntityInit)
+    float spacing = 100.0f;
+    uint32_t hpID = SpawnEntity(startX - spacing, startY - 100.0f, 32, 32, hTexHpPotion, 24, 24, 0, 0);
+    hasShopItem[hpID] = true;
+    shopItems[hpID] = { 0, GetShopPrice(SHOP_BASE_PRICE) };
+
+    uint32_t dmgID = SpawnEntity(startX, startY - 100.0f, 32, 32, hTexDamagePotion, 24, 24, 0, 0);
+    hasShopItem[dmgID] = true;
+    shopItems[dmgID] = { 1, GetShopPrice(SHOP_BASE_PRICE) };
+
+    uint32_t spdID = SpawnEntity(startX + spacing, startY - 100.0f, 32, 32, hTexSpeedPotion, 24, 24, 0, 0);
+    hasShopItem[spdID] = true;
+    shopItems[spdID] = { 2, GetShopPrice(SHOP_BASE_PRICE) };
 }
 
 // support functions - logic
@@ -1715,6 +1800,8 @@ void ClearMapTextures() {
     DeleteObject(hTexWasdTile);
     DeleteObject(hTexSpaceTile);
     DeleteObject(hTexLeftClickTile);
+    DeleteObject(hTexZoomTile);
+    DeleteObject(hTexRestartTile);
 }
 void ClearItemTextures() {
     DeleteObject(hTexCoin);

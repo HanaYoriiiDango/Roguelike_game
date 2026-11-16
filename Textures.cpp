@@ -7,6 +7,8 @@ HBITMAP hTexPortal = NULL;
 HBITMAP hTexWasdTile = NULL;
 HBITMAP hTexSpaceTile = NULL;
 HBITMAP hTexLeftClickTile = NULL;
+HBITMAP hTexZoomTile = NULL;
+HBITMAP hTexRestartTile = NULL;
 
 // UI
 HBITMAP hTexUIHp = NULL;

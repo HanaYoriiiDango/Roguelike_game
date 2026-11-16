@@ -8,6 +8,8 @@ extern HBITMAP hTexPortal;
 extern HBITMAP hTexWasdTile;
 extern HBITMAP hTexSpaceTile;
 extern HBITMAP hTexLeftClickTile;
+extern HBITMAP hTexZoomTile;
+extern HBITMAP hTexRestartTile;
 
 // UI
 extern HBITMAP hTexUIHp;

@@ -8,6 +8,14 @@ HBITMAP hTexWasdTile = NULL;
 HBITMAP hTexSpaceTile = NULL;
 HBITMAP hTexLeftClickTile = NULL;
 
+// UI
+HBITMAP hTexUIHp = NULL;
+//HBITMAP hTexUIGold = NULL;
+HBITMAP hTexUIDmg = NULL;
+HBITMAP hTexUISpeed = NULL;
+HBITMAP hTexUIFloor = NULL;
+HBITMAP hTexUIBackground = NULL;
+
 // items
 HBITMAP hTexCoin = NULL;
 HBITMAP hTexHpPotion = NULL;

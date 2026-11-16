@@ -105,3 +105,4 @@ extern int map[MAP_H][MAP_W];
 extern int gold;
 extern int floorLevel;
 extern float speedMultiplier;  // Множитель скорости (1.0 = базовая)
+extern HFONT hFont;

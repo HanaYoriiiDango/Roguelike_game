@@ -20,6 +20,7 @@ void LoadHeroDash();
 void LoadHeroTextures();
 void LoadEnemyTextures();
 void LoadItemTextures();
+void LoadUITextures();
 void CheckLoadHeroWalkTextures();
 void CheckLoadHeroIdleTextures();
 void CheckLoadAttackTextures();
@@ -51,6 +52,7 @@ void SystemShop();
 
 // render
 void SystemRender();
+void DrawHUD();
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent);
 void DrawGrid();
 void DrawDebugHitbox(float worldX, float worldY, float w, float h, COLORREF color);
@@ -97,6 +99,7 @@ float DistanceBetweenHitboxes(uint32_t a, uint32_t b);
 bool IsHitboxOverlap(uint32_t a, uint32_t b);
 
 // support functions - cleaning
+void ClearUITextures();
 void ClearMapTextures();
 void ClearItemTextures();
 void ClearHeroTextures();

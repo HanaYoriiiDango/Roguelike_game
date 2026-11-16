@@ -5,60 +5,73 @@ void GenerateMap() {
 
     for (int y = 0; y < MAP_H; y++) {
         for (int x = 0; x < MAP_W; x++) {
-            map[y][x] = 1;
+            map[y][x] = TILE_WALL;
         }
     }
 
-    for (int i = 0; i < 15; i++) {
-        int w = 4 + rand() % 6;
-        int h = 4 + rand() % 6;
-        int x = 1 + rand() % (MAP_W - w - 2);
-        int y = 1 + rand() % (MAP_H - h - 2);
+    int minRooms = 5 + (floorLevel - 1) * 2;
+    int maxRooms = 7 + (floorLevel - 1) * 2;
 
-        bool intersects = false;
-        for (const Room& r : rooms) {
+    int maxRoomsByWidth = (MAP_W - 10) / 10; // ~12 комнат для MAP_W = 128
+    if (maxRooms > maxRoomsByWidth) maxRooms = maxRoomsByWidth;
+    if (minRooms > maxRooms) minRooms = maxRooms;
 
-            if (x < r.x + r.w + 1 && x + w + 1 > r.x &&
-                y < r.y + r.h + 1 && y + h + 1 > r.y) {
-                intersects = true;
-                break;
-            }
-        }
+    int roomCount = minRooms + rand() % (maxRooms - minRooms + 1);
 
-        if (!intersects) {
+    int curX = 5; // Начало (с отступом)
+    int cenY = MAP_H / 2; // Центр по Y
 
-            for (int ty = y; ty < y + h; ty++) {
-                for (int tx = x; tx < x + w; tx++) {
-                    map[ty][tx] = 0;
-                }
-            }
-            rooms.push_back({ x, y, w, h });
-        }
+    rooms.clear();
+
+    for (int i = 0; i < roomCount; i++) {
+        int w = 5 + rand() % 5; // Ширина 5-9
+        int h = 5 + rand() % 5; // Высота 5-9
+
+        // Случайное смещение по Y (но не слишком далеко от центра)
+        int y = cenY - h / 2 + (rand() % 5) - 2; // ±2 тайла от центра
+        if (y < 1) y = 1;
+        if (y + h > MAP_H - 1) y = MAP_H - h - 1;
+
+        int x = curX;
+
+        if (x + w >= MAP_W - 2) break; // Прекращаем генерацию
+
+        // Выкапываем комнату
+        for (int ty = y; ty < y + h; ty++)
+            for (int tx = x; tx < x + w; tx++)
+                map[ty][tx] = TILE_FLOOR;
+
+        rooms.push_back({ x, y, w, h });
+
+        // Следующая комната — правее (с небольшим отступом)
+        curX += w + 2 + rand() % 3; // Отступ 2-4 тайла (коридор)
     }
 
+    // Соединяем комнаты горизонтальными коридорами
     for (int i = 0; i < rooms.size() - 1; i++) {
-        int cx1 = rooms[i].x + rooms[i].w / 2;
-        int cy1 = rooms[i].y + rooms[i].h / 2;
-        int cx2 = rooms[i + 1].x + rooms[i + 1].w / 2;
-        int cy2 = rooms[i + 1].y + rooms[i + 1].h / 2;
+        int cy1 = rooms[i].y + rooms[i].h / 2;      // Центр комнаты i по Y
+        int cy2 = rooms[i + 1].y + rooms[i + 1].h / 2;  // Центр комнаты i+1 по Y
 
-        int stepX = (cx1 < cx2) ? 1 : -1;
-        for (int x = cx1; x != cx2; x += stepX) {
-            map[cy1][x] = 0;
+        int x1 = rooms[i].x + rooms[i].w;  // Правый край комнаты i
+        int x2 = rooms[i + 1].x;             // Левый край комнаты i+1
+
+        // 1. Горизонтальный коридор на высоте cy1
+        for (int x = x1; x <= x2; x++) {
+            map[cy1][x] = TILE_FLOOR;
         }
 
-        int stepY = (cy1 < cy2) ? 1 : -1;
-        for (int y = cy1; y != cy2; y += stepY) {
-            map[y][cx2] = 0;
+        // 2. Если Y не совпадают — вертикальный переход ВНУТРИ комнаты i+1
+        if (cy1 != cy2) {
+            int stepY = (cy1 < cy2) ? 1 : -1;
+            for (int y = cy1; y != cy2; y += stepY) {
+                map[y][x2] = TILE_FLOOR; // Вертикальный коридор по левому краю комнаты i+1
+            }
         }
-
-        
-        Room lastRoom = rooms[rooms.size() - 1];
-        int portalX = lastRoom.x + lastRoom.w / 2;
-        int portalY = lastRoom.y + lastRoom.h / 2;
-        map[portalY][portalX] = TILE_PORTAL;
     }
 
+    // 4. Портал в последней комнате
+    Room lastRoom = rooms.back();
+    map[lastRoom.y + lastRoom.h / 2][lastRoom.x + lastRoom.w / 2] = TILE_PORTAL;
     
     Room firstRoom = rooms[0];
     int centerX = firstRoom.x + firstRoom.w / 2;
@@ -271,6 +284,13 @@ void LoadItemTextures() {
     hTexSpeedPotion = (HBITMAP)LoadImageW(NULL, L"speed_potion.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hTexDamagePotion = (HBITMAP)LoadImageW(NULL, L"damage_potion.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+}
+void LoadUITextures() {
+    hTexUIHp = (HBITMAP)LoadImageW(NULL, L"ui_hp.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexUIDmg = (HBITMAP)LoadImageW(NULL, L"ui_dmg.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexUISpeed = (HBITMAP)LoadImageW(NULL, L"ui_speed.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexUIFloor = (HBITMAP)LoadImageW(NULL, L"ui_floor.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    hTexUIBackground = (HBITMAP)LoadImageW(NULL, L"ui_bg.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 }
 void CheckLoadHeroWalkTextures() {
     for (int i = 0; i < 7; i++) {
@@ -901,17 +921,7 @@ void SystemRender() {
     float currentSpeed = HERO_SPEED * speedMultiplier;
     float speedPercent = speedMultiplier * 100.0f;
 
-    // HUD
-    wchar_t buf[256];
-    swprintf_s(buf, L"HP: %.0f  Gold: %d  DMG: %.0f  Speed: %.0f%%  Floor: %d",
-        healths[HeroID].hp,
-        gold,
-        weapons[HeroID].damage,
-        speedPercent,
-        floorLevel);
-    SetTextColor(window.mem_dc, RGB(255, 255, 255));
-    SetBkMode(window.mem_dc, TRANSPARENT);
-    TextOutW(window.mem_dc, 20, 20, buf, wcslen(buf));
+    DrawHUD();
 
     // Цены над предметами магазина
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
@@ -928,6 +938,77 @@ void SystemRender() {
         SetBkMode(window.mem_dc, TRANSPARENT);
         TextOutW(window.mem_dc, sx, sy, priceText, wcslen(priceText));
     }
+}
+void DrawHUD() {
+    // Размеры фона
+    int bgW = 600;
+    int bgH = 80;
+    int bgX = (window.width - bgW) / 2;
+    int bgY = window.height - bgH - 20;
+
+    // 1. Фон
+    if (hTexUIBackground) {
+        ShowSprite(bgX, bgY, bgW, bgH, hTexUIBackground, false);
+    }
+    else {
+        RECT bgRect = { bgX, bgY, bgX + bgW, bgY + bgH };
+        HBRUSH bgBrush = CreateSolidBrush(RGB(40, 40, 40));
+        FillRect(window.mem_dc, &bgRect, bgBrush);
+        DeleteObject(bgBrush);
+    }
+
+    // 2. Настройки текста
+    SetBkMode(window.mem_dc, TRANSPARENT);  // ← прозрачный фон
+    HFONT oldFont = (HFONT)SelectObject(window.mem_dc, hFont);  // ← крупный шрифт
+
+    // 3. Иконки и текст
+    int iconSize = 32;
+    int spacing = 20;
+    int startX = bgX + 20;
+    int iconY = bgY + (bgH - iconSize) / 2;
+    int textY = bgY + 25;
+
+    // HP
+    if (hTexUIHp) ShowSprite(startX, iconY, iconSize, iconSize, hTexUIHp, true);
+    wchar_t hpText[32];
+    swprintf_s(hpText, L"%.0f", healths[HeroID].hp);
+    SetTextColor(window.mem_dc, RGB(255, 100, 100));
+    TextOutW(window.mem_dc, startX + iconSize + 5, textY, hpText, wcslen(hpText));
+    startX += iconSize + spacing + 60;
+
+    // Gold
+    if (hTexCoin) ShowSprite(startX, iconY, iconSize, iconSize, hTexCoin, true);
+    wchar_t goldText[32];
+    swprintf_s(goldText, L"%d", gold);
+    SetTextColor(window.mem_dc, RGB(255, 215, 0));
+    TextOutW(window.mem_dc, startX + iconSize + 5, textY, goldText, wcslen(goldText));
+    startX += iconSize + spacing + 60;
+
+    // DMG
+    if (hTexUIDmg) ShowSprite(startX, iconY, iconSize, iconSize, hTexUIDmg, true);
+    wchar_t dmgText[32];
+    swprintf_s(dmgText, L"%.0f", weapons[HeroID].damage);
+    SetTextColor(window.mem_dc, RGB(255, 150, 50));
+    TextOutW(window.mem_dc, startX + iconSize + 5, textY, dmgText, wcslen(dmgText));
+    startX += iconSize + spacing + 60;
+
+    // Speed
+    if (hTexUISpeed) ShowSprite(startX, iconY, iconSize, iconSize, hTexUISpeed, true);
+    wchar_t speedText[32];
+    swprintf_s(speedText, L"%.0f%%", speedMultiplier * 100.0f);
+    SetTextColor(window.mem_dc, RGB(150, 255, 150));
+    TextOutW(window.mem_dc, startX + iconSize + 5, textY, speedText, wcslen(speedText));
+    startX += iconSize + spacing + 60;
+
+    // Floor
+    if (hTexUIFloor) ShowSprite(startX, iconY, iconSize, iconSize, hTexUIFloor, true);
+    wchar_t floorText[32];
+    swprintf_s(floorText, L"%d", floorLevel);
+    SetTextColor(window.mem_dc, RGB(200, 200, 255));
+    TextOutW(window.mem_dc, startX + iconSize + 5, textY, floorText, wcslen(floorText));
+
+    // 4. Восстановить старый шрифт
+    SelectObject(window.mem_dc, oldFont);
 }
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
 
@@ -1139,6 +1220,7 @@ void LoadBMP() {
     LoadHeroTextures();
     LoadEnemyTextures();
     LoadItemTextures();
+    LoadUITextures();
 
     CheckLoadTextures();
 
@@ -1146,6 +1228,20 @@ void LoadBMP() {
 void InitGame() {
 
     srand(time(nullptr));
+
+    hFont = CreateFontW(
+        24,                        // Высота шрифта (24 пикселя)
+        0, 0, 0,                   // Ширина, угол, угол
+        FW_BOLD,                   // Жирность (FW_BOLD = жирный)
+        FALSE, FALSE, FALSE,       // Курсив, подчёркивание, зачёркивание
+        DEFAULT_CHARSET,           // Кодировка
+        OUT_DEFAULT_PRECIS,        // Точность вывода
+        CLIP_DEFAULT_PRECIS,       // Точность обрезки
+        DEFAULT_QUALITY,           // Качество
+        DEFAULT_PITCH | FF_DONTCARE, // Шаг и семейство
+        L"Arial"                   // Имя шрифта
+    );
+
     LoadBMP();
     GenerateMap();
     EntityInit();
@@ -1185,6 +1281,7 @@ void ShowGame() {
     DeleteDC(window.mem_dc);
 }
 void ClearGame() {
+    ClearUITextures();
     ClearMapTextures();
     ClearHeroTextures();
     ClearEnemyTextures();
@@ -1595,6 +1692,16 @@ bool IsHitboxOverlap(uint32_t a, uint32_t b) {
 }
 
 // support functions - cleaning
+void ClearUITextures() {
+    DeleteObject(hFont);
+    DeleteObject(hTexUIHp);
+    DeleteObject(hTexUIDmg);
+    DeleteObject(hTexUISpeed);
+    DeleteObject(hTexUIFloor);
+    DeleteObject(hTexUIBackground);
+
+
+}
 void ClearMapTextures() {
     DeleteObject(hTexWall);
     DeleteObject(hTexGrass);

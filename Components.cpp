@@ -47,3 +47,4 @@ int gold = 0;
 int floorLevel = 1;
 
 float speedMultiplier = 1.0f;
+HFONT hFont = NULL;

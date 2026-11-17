@@ -94,7 +94,7 @@ void SpawnEntityInRooms() {
     int enemiesPerRoom = 1 + (floorLevel - 1) / 2;        
 
     for (int i = 1; i < rooms.size(); i++) {
-        int enemiesCount = 1 + rand() % enemiesPerRoom;
+        int enemiesCount = 2 + rand() % enemiesPerRoom;
 
         for (int j = 0; j < enemiesCount; j++) {
             int tx = rooms[i].x + (rand() % rooms[i].w);
@@ -109,6 +109,8 @@ void SpawnEntityInRooms() {
                 // spider
                 uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexSpider,
                     SPIDER_HITBOX_W, SPIDER_HITBOX_H, 0, SPIDER_HITBOX_OFFSET_Y);
+                if (id == UINT32_MAX) continue;
+
                 hasAI[id] = true;
                 ais[id] = { 1, SPIDER_SPEED * 0.15f, SPIDER_AGGRO_RADIUS, 0, 0.0f, 0.0f };
                 hasHealth[id] = true;
@@ -118,6 +120,8 @@ void SpawnEntityInRooms() {
                 // bat
                 uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexBat,
                     BAT_HITBOX_W, BAT_HITBOX_H, 0, BAT_HITBOX_OFFSET_Y);
+                if (id == UINT32_MAX) continue;
+
                 hasAI[id] = true;
                 ais[id] = { 2, BAT_SPEED * 0.15f, BAT_AGGRO_RADIUS, 0, 0.0f, 0.0f };
                 hasHealth[id] = true;
@@ -127,6 +131,8 @@ void SpawnEntityInRooms() {
                 // necromancer
                 uint32_t id = SpawnEntity(spawnX, spawnY, SPRITE_SIZE, SPRITE_SIZE, hTexNecromancer,
                     SHOOTER_HITBOX_W, SHOOTER_HITBOX_H, 0, SHOOTER_HITBOX_OFFSET_Y);
+                if (id == UINT32_MAX) continue;
+
                 hasAI[id] = true;
                 ais[id] = { 3, 0, SHOOTER_AGGRO_RADIUS, 0, 0.0f, SHOOTER_SHOOT_COOLDOWN };
                 hasHealth[id] = true;
@@ -142,6 +148,12 @@ void EntityInit() {
 
     HeroID = SpawnEntity(startX, startY, SPRITE_SIZE, SPRITE_SIZE, hTexHero,
         HERO_HITBOX_W, HERO_HITBOX_H, 0, HERO_HITBOX_OFFSET_Y);
+
+    if (HeroID == UINT32_MAX) {
+        MessageBoxW(NULL, L"Error: Array index out of bounds", L"EntityInit", MB_ICONERROR);
+        return;
+    }
+
     hasHealth[HeroID] = true;
     healths[HeroID] = { 100.0f, 100.0f };
     hasWeapon[HeroID] = true;
@@ -451,10 +463,12 @@ uint32_t CreateEntity() {
             return id; // free id return
         }
     }
-    return -1;
+    return UINT32_MAX;
 }
 uint32_t SpawnEntity(float x, float y, int w, int h, HBITMAP hBitmap, float HitBoxW, float HitBoxH, float offsetX, float offsetY) {
     uint32_t id = CreateEntity();
+
+    if (id == UINT32_MAX) return UINT32_MAX;
 
     hasVelocity[id] = true;
     velocities[id] = { 0, 0 };
@@ -761,21 +775,14 @@ void SystemDeath() {
                     16, 16, 0, 0
                 );
 
-                if (coinID != -1) { 
+                if (coinID != UINT32_MAX) {
                     hasLoot[coinID] = true;
                     loots[coinID] = { 0 };
                 }
             }
 
             // clear
-            active[id] = false;
-            hasPosition[id] = false;
-            hasVelocity[id] = false;
-            hasRenderable[id] = false;
-            hasCollider[id] = false;
-            hasHealth[id] = false;
-            hasAI[id] = false;
-            hasWeapon[id] = false;
+            ResetEntity(id);
         }
     }
 }
@@ -854,12 +861,8 @@ void SystemLoot() {
                 // PlaySoundW(L"coin.wav", NULL, SND_FILENAME | SND_ASYNC);
             }
 
-            // Удаляем монету
-            active[id] = false;
-            hasPosition[id] = false;
-            hasRenderable[id] = false;
-            hasCollider[id] = false;
-            hasLoot[id] = false;
+            // clear
+            ResetEntity(id);
         }
     }
 }
@@ -891,12 +894,8 @@ void SystemShop() {
                     speedMultiplier += 0.1f; // +10% скорости
                 }
 
-                // Удаляем предмет
-                active[id] = false;
-                hasPosition[id] = false;
-                hasRenderable[id] = false;
-                hasCollider[id] = false;
-                hasShopItem[id] = false;
+                // clear
+                ResetEntity(id);
             }
         }
     }
@@ -1302,19 +1301,7 @@ void RestartLevel() {
 
     // 2. Очистка сущностей
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-        active[id] = false;
-        hasPosition[id] = false;
-        hasVelocity[id] = false;
-        hasRenderable[id] = false;
-        hasCollider[id] = false;
-        hasHealth[id] = false;
-        hasAI[id] = false;
-        hasWeapon[id] = false;
-        hasDirection[id] = false;
-        hasAnimation[id] = false;
-        hasDash[id] = false;
-        hasHurtFlash[id] = false;
-        hasKnockback[id] = false;
+        ResetEntity(id);
     }
 
     // 3. Очистка комнат
@@ -1333,22 +1320,7 @@ void NextFloor() {
 
     // 2. Очистка сущностей (без сброса статов)
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
-        active[id] = false;
-        hasPosition[id] = false;
-        hasVelocity[id] = false;
-        hasRenderable[id] = false;
-        hasCollider[id] = false;
-        hasHealth[id] = false;
-        hasAI[id] = false;
-        hasWeapon[id] = false;
-        hasDirection[id] = false;
-        hasAnimation[id] = false;
-        hasDash[id] = false;
-        hasHurtFlash[id] = false;
-        hasKnockback[id] = false;
-        hasShopItem[id] = false;  
-        hasLoot[id] = false;
-
+        ResetEntity(id);
     }
 
     // 3. Очистка комнат
@@ -1367,6 +1339,11 @@ void NextFloor() {
 
     HeroID = SpawnEntity(startX, startY, SPRITE_SIZE, SPRITE_SIZE, hTexHero,
         HERO_HITBOX_W, HERO_HITBOX_H, 0, HERO_HITBOX_OFFSET_Y);
+    if (HeroID == UINT32_MAX) {
+        MessageBoxW(NULL, L"Error: Array index out of bounds", L"EntityInit", MB_ICONERROR);
+        return;
+    }
+
     hasHealth[HeroID] = true;
     healths[HeroID] = { savedHp, savedMaxHp };
     hasWeapon[HeroID] = true;
@@ -1403,6 +1380,7 @@ void NextFloor() {
     hasShopItem[spdID] = true;
     shopItems[spdID] = { 2, GetShopPrice(SHOP_BASE_PRICE) };
 }
+
 
 // support functions - logic
 bool IsAttackHit(uint32_t enemyID) {
@@ -1671,14 +1649,8 @@ void GhostHitHero() {
             hasHurtFlash[HeroID] = true;
             hurtFlashes[HeroID].timer = 12.0f;
 
-            // Удаляем призрака
-            active[id] = false;
-            hasAI[id] = false;
-            hasPosition[id] = false;
-            hasVelocity[id] = false;
-            hasRenderable[id] = false;
-            hasCollider[id] = false;
-            hasHealth[id] = false;
+            //clear
+            ResetEntity(id);
         }
     }
 }
@@ -1699,6 +1671,8 @@ void SpawnGhost(uint32_t shooterID) {
         32, 32, hTexGhost,
         GHOST_HITBOX_W, GHOST_HITBOX_H, 0, 0
     );
+
+    if (ghostID == UINT32_MAX) return;
 
     hasVelocity[ghostID] = true;
     velocities[ghostID].dx = dx * GHOST_SPEED * 0.15f;
@@ -1734,7 +1708,7 @@ bool IsWallAt(float worldX, float worldY) {
 
     if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return true;
 
-    return map[ty][tx] == 1;
+    return map[ty][tx] == TILE_WALL;
 
 }
 bool IsWallBetween(float x1, float y1, float x2, float y2) {
@@ -1787,6 +1761,24 @@ bool IsHitboxOverlap(uint32_t a, uint32_t b) {
 }
 
 // support functions - cleaning
+void ResetEntity(uint32_t id) {
+    active[id] = false;
+    hasPosition[id] = false;
+    hasVelocity[id] = false;
+    hasRenderable[id] = false;
+    hasCollider[id] = false;
+    hasHealth[id] = false;
+    hasAI[id] = false;
+    hasWeapon[id] = false;
+    hasDirection[id] = false;
+    hasAnimation[id] = false;
+    hasDash[id] = false;
+    hasHurtFlash[id] = false;
+    hasKnockback[id] = false;
+    hasShopItem[id] = false;
+    hasLoot[id] = false;
+
+}
 void ClearUITextures() {
     DeleteObject(hFont);
     DeleteObject(hTexUIHp);

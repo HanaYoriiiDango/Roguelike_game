@@ -100,6 +100,7 @@ float DistanceBetweenHitboxes(uint32_t a, uint32_t b);
 bool IsHitboxOverlap(uint32_t a, uint32_t b);
 
 // support functions - cleaning
+void ResetEntity(uint32_t id);
 void ClearUITextures();
 void ClearMapTextures();
 void ClearItemTextures();

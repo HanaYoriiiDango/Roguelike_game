@@ -46,8 +46,8 @@ HBITMAP hTexHeroUpAttack[4] = { NULL };
 HBITMAP hTexHeroLeftAttack[4] = { NULL };
 HBITMAP hTexHeroRightAttack[4] = { NULL };
 
-HBITMAP hTexHeroDownDash = NULL;;
-HBITMAP hTexHeroUpDash = NULL;;
+HBITMAP hTexHeroDownDash = NULL;
+HBITMAP hTexHeroUpDash = NULL;
 HBITMAP hTexHeroLeftDash = NULL;
 HBITMAP hTexHeroRightDash = NULL;
 

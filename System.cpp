@@ -1249,8 +1249,8 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
-    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    //mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    //mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
 
 }
 void ProcessGame() {
@@ -1366,14 +1366,20 @@ void NextFloor() {
     // Спавн зелий 
     float spacing = 100.0f;
     uint32_t hpID = SpawnEntity(startX - spacing, startY - 100.0f, 32, 32, hTexHpPotion, 24, 24, 0, 0);
+    if (hpID == UINT32_MAX) return;
+
     hasShopItem[hpID] = true;
     shopItems[hpID] = { 0, GetShopPrice(SHOP_BASE_PRICE) };
 
     uint32_t dmgID = SpawnEntity(startX, startY - 100.0f, 32, 32, hTexDamagePotion, 24, 24, 0, 0);
+    if (hpID == UINT32_MAX) return;
+
     hasShopItem[dmgID] = true;
     shopItems[dmgID] = { 1, GetShopPrice(SHOP_BASE_PRICE) };
 
     uint32_t spdID = SpawnEntity(startX + spacing, startY - 100.0f, 32, 32, hTexSpeedPotion, 24, 24, 0, 0);
+    if (hpID == UINT32_MAX) return;
+
     hasShopItem[spdID] = true;
     shopItems[spdID] = { 2, GetShopPrice(SHOP_BASE_PRICE) };
 }

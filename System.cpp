@@ -94,7 +94,7 @@ void SpawnEntityInRooms() {
     int enemiesPerRoom = 1 + (floorLevel - 1) / 2;        
 
     for (int i = 1; i < rooms.size(); i++) {
-        int enemiesCount = 2 + rand() % enemiesPerRoom;
+        int enemiesCount = 3 + rand() % enemiesPerRoom;
 
         for (int j = 0; j < enemiesCount; j++) {
             int tx = rooms[i].x + (rand() % rooms[i].w);

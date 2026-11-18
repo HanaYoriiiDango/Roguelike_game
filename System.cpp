@@ -55,12 +55,12 @@ void GenerateMap() {
         int x1 = rooms[i].x + rooms[i].w;  // Правый край комнаты i
         int x2 = rooms[i + 1].x;             // Левый край комнаты i+1
 
-        // 1. Горизонтальный коридор на высоте cy1
+        // Горизонтальный коридор на высоте cy1
         for (int x = x1; x <= x2; x++) {
             map[cy1][x] = TILE_FLOOR;
         }
 
-        // 2. Если Y не совпадают — вертикальный переход ВНУТРИ комнаты i+1
+        // Если Y не совпадают вертикальный переход ВНУТРИ комнаты i+1
         if (cy1 != cy2) {
             int stepY = (cy1 < cy2) ? 1 : -1;
             for (int y = cy1; y != cy2; y += stepY) {
@@ -69,7 +69,7 @@ void GenerateMap() {
         }
     }
 
-    // 4. Портал в последней комнате
+    // Портал в последней комнате
     Room lastRoom = rooms.back();
     map[lastRoom.y + lastRoom.h / 2][lastRoom.x + lastRoom.w / 2] = TILE_PORTAL;
     
@@ -857,8 +857,7 @@ void SystemLoot() {
         if (IsHitboxOverlap(id, HeroID)) {
             if (loots[id].type == 0) {
                 gold += 1;
-                // Звук подбора (опционально)
-                // PlaySoundW(L"coin.wav", NULL, SND_FILENAME | SND_ASYNC);
+                
             }
 
             // clear
@@ -923,8 +922,7 @@ void SystemRender() {
     float speedPercent = speedMultiplier * 100.0f;
 
     DrawHUD();
-
-    // Цены над предметами магазина
+    // price potions
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         if (!active[id] || !hasShopItem[id]) continue;
         if (!hasPosition[id]) continue;
@@ -935,7 +933,7 @@ void SystemRender() {
         int sx = ScreenX(positions[id].x) - 40;
         int sy = ScreenY(positions[id].y) + 40;
 
-        SetTextColor(window.mem_dc, RGB(255, 215, 0)); // Золотой
+        SetTextColor(window.mem_dc, RGB(255, 215, 0)); 
         SetBkMode(window.mem_dc, TRANSPARENT);
         TextOutW(window.mem_dc, sx, sy, priceText, wcslen(priceText));
     }
@@ -947,7 +945,7 @@ void DrawHUD() {
     int bgX = (window.width - bgW) / 2;
     int bgY = window.height - bgH - 60;
 
-    // 1. Фон
+    // Фон
     if (hTexUIBackground) {
         ShowSprite(bgX, bgY, bgW, bgH, hTexUIBackground, false);
     }
@@ -958,11 +956,11 @@ void DrawHUD() {
         DeleteObject(bgBrush);
     }
 
-    // 2. Настройки текста
+    // Настройки текста
     SetBkMode(window.mem_dc, TRANSPARENT);  // ← прозрачный фон
     HFONT oldFont = (HFONT)SelectObject(window.mem_dc, hFont);  // ← крупный шрифт
 
-    // 3. Иконки и текст
+    // Иконки и текст
     int iconSize = 32;
     int spacing = 20;
     int startX = bgX + 20;
@@ -1008,7 +1006,7 @@ void DrawHUD() {
     SetTextColor(window.mem_dc, RGB(200, 200, 255));
     TextOutW(window.mem_dc, startX + iconSize + 20, textY, floorText, wcslen(floorText));
 
-    // 4. Восстановить старый шрифт
+    //Восстановить старый шрифт
     SelectObject(window.mem_dc, oldFont);
 }
 void ShowSprite(int x, int y, int w, int h, HBITMAP hBitmap, bool transparent) {
@@ -1154,13 +1152,12 @@ void ShowMap() {
 void DrawEntity(uint32_t id) {
     if (!active[id] || !hasPosition[id]) return;
 
-    // === ВЫБОР СПРАЙТА ===
     HBITMAP bmp = NULL;
 
-    // 1. Вспышка урона (для врагов — красный спрайт)
+    // Вспышка урона (для врагов — красный спрайт)
     if (hasHurtFlash[id] && hurtFlashes[id].timer > 0) {
         if (id == HeroID) {
-            bmp = hTexHeroHurt; // ← герой
+            bmp = hTexHeroHurt; // герой
         }
         else if (hasAI[id]) {
             if (ais[id].type == 1) bmp = hTexSpiderHurt;
@@ -1169,7 +1166,7 @@ void DrawEntity(uint32_t id) {
         }
     }
 
-    // 2. Обычная логика (если не вспышка)
+    // Обычная логика (если не вспышка)
     if (!bmp) {
         if (hasAnimation[id] && animations[id].frameCount > 0) {
             bmp = animations[id].frames[animations[id].currentFrame];
@@ -1181,24 +1178,24 @@ void DrawEntity(uint32_t id) {
 
     if (!bmp) return;
 
-    // === РАЗМЕРЫ ===
+    // size 
     int w = SPRITE_SIZE, h = SPRITE_SIZE;
     if (hasRenderable[id]) {
         w = renderables[id].w;
         h = renderables[id].h;
     }
 
-    // === ПОЗИЦИЯ ===
+    // position
     float x = positions[id].x;
     float y = positions[id].y;
 
     int drawX = ScreenX(x) - (int)(w * ZOOM) / 2;
     int drawY = ScreenY(y) - (int)(h * ZOOM) / 2;
 
-    // === ОТРИСОВКА СПРАЙТА ===
+    // rennder
     ShowSprite(drawX, drawY, (int)(w * ZOOM), (int)(h * ZOOM), bmp, true);
 
-    // === ХИТБОКС ДЛЯ ДЕБАГА ===
+    // hitbox
     if (showGrid && hasCollider[id]) {
         float hw = colliders[id].w;
         float hh = colliders[id].h;
@@ -1252,8 +1249,8 @@ void InitGame() {
     GenerateMap();
     EntityInit();
 
-    //mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
-    //mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
+    mciSendString(TEXT("open \"thisskyofmineextended.mp3\" alias music"), NULL, 0, NULL);
+    mciSendString(TEXT("play music repeat"), NULL, 0, NULL);
 
 }
 void ProcessGame() {
@@ -1312,27 +1309,27 @@ void RestartLevel() {
     EntityInit();
 }
 void NextFloor() {
-    // 1. Сохранить статы героя
+    // Сохранить статы героя
     float savedHp = healths[HeroID].hp;
     float savedMaxHp = healths[HeroID].maxHp;
     float savedDamage = weapons[HeroID].damage;
     float savedSpeed = speedMultiplier;
 
-    // 2. Очистка сущностей (без сброса статов)
+    // Очистка сущностей (без сброса статов)
     for (uint32_t id = 0; id < MAX_ENTITIES; id++) {
         ResetEntity(id);
     }
 
-    // 3. Очистка комнат
+    // Очистка комнат
     rooms.clear();
 
-    // 4. Увеличить этаж
+    // Увеличить этаж
     floorLevel++;
 
-    // 5. Пересоздать карту (без сброса статов)
+    // Пересоздать карту (без сброса статов)
     GenerateMap();
 
-    // 6. Спавн героя с сохранёнными статами
+    // Спавн героя с сохранёнными статами
     Room firstRoom = rooms[0];
     float startX = (firstRoom.x + firstRoom.w / 2.0f) * TILE;
     float startY = (firstRoom.y + firstRoom.h / 2.0f) * TILE;
@@ -1360,13 +1357,13 @@ void NextFloor() {
     hasDash[HeroID] = true;
     dashes[HeroID] = { 0, 0, 0, 0 };
 
-    // 7. Восстановить скорость
+    // Восстановить скорость
     speedMultiplier = savedSpeed;
 
-    // 8. Спавн врагов и зелий
+    // Спавн врагов и зелий
     SpawnEntityInRooms();
 
-    // 9. Спавн зелий (как в EntityInit)
+    // Спавн зелий 
     float spacing = 100.0f;
     uint32_t hpID = SpawnEntity(startX - spacing, startY - 100.0f, 32, 32, hTexHpPotion, 24, 24, 0, 0);
     hasShopItem[hpID] = true;
@@ -1387,11 +1384,11 @@ bool IsAttackHit(uint32_t enemyID) {
     if (!hasCollider[HeroID] || !hasCollider[enemyID]) return false;
     if (!hasDirection[HeroID]) return false;
 
-    // Центр хитбокса героя (откуда начинается удар)
+    // Центр хитбокса героя 
     float hx = positions[HeroID].x + colliders[HeroID].offsetX;
     float hy = positions[HeroID].y + colliders[HeroID].offsetY;
 
-    // Прямоугольник удара (вытянут вдоль взгляда)
+    // Прямоугольник удара 
     float R = HERO_ATTACK_RADIUS;
     float W = HERO_ATTACK_WIDTH;
     float rx1, ry1, rx2, ry2;
@@ -1409,7 +1406,7 @@ bool IsAttackHit(uint32_t enemyID) {
         rx1 = hx - W / 2; ry1 = hy - R;
         rx2 = hx + W / 2; ry2 = hy;
     }
-    else { // Down (0)
+    else { // Down 
         rx1 = hx - W / 2; ry1 = hy;
         rx2 = hx + W / 2; ry2 = hy + R;
     }
@@ -1423,7 +1420,7 @@ bool IsAttackHit(uint32_t enemyID) {
     float ex1 = ex - ehw, ey1 = ey - ehh;
     float ex2 = ex + ehw, ey2 = ey + ehh;
 
-    // Проверка через универсальную функцию
+    // Проверка 
     return IsRectOverlap(rx1, ry1, rx2, ry2, ex1, ey1, ex2, ey2);
 }
 void UpdateHeroVelocity() {
@@ -1487,7 +1484,7 @@ void SetHeroAnimationFrames(int targetState) {
 }
 void UpdateHeroAnimation(float dx, float dy) {
     if (!hasAnimation[HeroID]) return;
-    if (animations[HeroID].state == 2) return; // Атака идёт — не трогаем
+    if (animations[HeroID].state == 2) return; 
     if (animations[HeroID].state == 3) return;
 
     bool isMoving = (dx != 0 || dy != 0);
@@ -1504,7 +1501,7 @@ void UpdateHeroAnimation(float dx, float dy) {
         animations[HeroID].currentFrame = 0;
         animations[HeroID].frameTimer = 0.0f;
 
-        SetHeroAnimationFrames(targetState); // ← выносим загрузку кадров
+        SetHeroAnimationFrames(targetState); 
     }
 }
 void SetHeroAttackFrames() {
@@ -1532,7 +1529,7 @@ void ApplyHeroDamage() {
             hasHurtFlash[id] = true;
             hurtFlashes[id].timer = 12.0f;
 
-            // Отталкивание
+            // knockback
             float dx = positions[id].x - positions[HeroID].x;
             float dy = positions[id].y - positions[HeroID].y;
             float len = sqrt(dx * dx + dy * dy);
@@ -1548,16 +1545,16 @@ void ApplyHeroDamage() {
 void HeroAttack() {
     if (!hasWeapon[HeroID] || !hasPosition[HeroID] || !hasAnimation[HeroID]) return;
 
-    // 1. Всегда уменьшаем таймер
+    // Всегда уменьшаем таймер
     weapons[HeroID].timer -= 1.0f;
 
-    // 2. Если атака идёт — не начинаем новую
+    // Если атака идёт не начинаем новую
     if (animations[HeroID].state == 2) return;
 
-    // 3. Проверяем клик и кулдаун
+    // Проверяем клик и кулдаун
     if (!mouseLeftDown || weapons[HeroID].timer > 0) return;
 
-    // 4. Запуск атаки
+    // Запуск атаки
     weapons[HeroID].timer = weapons[HeroID].cooldown;
     mouseLeftDown = false;
     PlaySoundW(L"whip.wav", NULL, SND_FILENAME | SND_ASYNC);
